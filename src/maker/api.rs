@@ -29,6 +29,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering::Relaxed},
+        mpsc::{Receiver, Sender},
         Arc, Mutex, RwLock,
     },
     thread::JoinHandle,
@@ -234,6 +235,10 @@ pub struct Maker {
     pub(crate) thread_pool: Arc<ThreadPool>,
     /// Indexer address to poll for UTXO
     pub(crate) tracker: RwLock<Option<String>>,
+    /// watcher → handle_client
+    pub watch_tx: Sender<OutPoint>,
+    /// handle_client listens here
+    pub watch_rx: Arc<Mutex<Receiver<OutPoint>>>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -272,6 +277,8 @@ impl Maker {
         let wallet_path = wallets_dir.join(&wallet_file_name);
 
         let mut rpc_config = rpc_config.unwrap_or_default();
+        let (watch_tx, watch_rx) = std::sync::mpsc::channel();
+        let watch_rx = Arc::new(Mutex::new(watch_rx));
 
         rpc_config.wallet_name = wallet_file_name;
 
@@ -321,6 +328,8 @@ impl Maker {
             data_dir,
             thread_pool: Arc::new(ThreadPool::new(network_port)),
             tracker: RwLock::new(None),
+            watch_tx,
+            watch_rx,
         })
     }
 
@@ -528,6 +537,9 @@ pub(crate) fn check_for_broadcasted_contracts(maker: Arc<Maker>) -> Result<(), M
         }
         // An extra scope to release all locks when done.
         {
+            let (incomings, outgoings) = maker.wallet.read()?.find_unfinished_swapcoins();
+            let is_hash_preimage_known =
+                incomings.iter().any(|ic_sc| ic_sc.is_hash_preimage_known());
             let mut lock_onstate = maker.ongoing_swap_state.lock()?;
             for (ip, (connection_state, _)) in lock_onstate.iter_mut() {
                 let txids_to_watch = connection_state
@@ -558,6 +570,24 @@ pub(crate) fn check_for_broadcasted_contracts(maker: Arc<Maker>) -> Result<(), M
                             maker.config.network_port,
                             txid
                         );
+                        if !is_hash_preimage_known {
+                            for outgoing in outgoings.iter() {
+                                for (vout, txout) in outgoing.contract_tx.output.iter().enumerate()
+                                {
+                                    if txout.script_pubkey == outgoing.contract_redeemscript {
+                                        let outpoint = OutPoint {
+                                            txid,
+                                            vout: vout as u32,
+                                        };
+                                        if let Err(e) = maker.watch_tx.send(outpoint) {
+                                            log::error!(
+                                                "Failed to send Outpoint to handle client: {e:?}"
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         failed_swap_ip.push(ip.clone());
 
@@ -674,7 +704,7 @@ pub(crate) fn check_for_idle_states(maker: Arc<Maker>) -> Result<(), MakerError>
 
 /// Broadcast Incoming and Outgoing Contract transactions & timelock contract after maturity or hashlock contract.
 /// Remove contract transactions from the wallet.
-pub(crate) fn recover_from_swap(maker: Arc<Maker>) -> Result<(), MakerError> {
+pub fn recover_from_swap(maker: Arc<Maker>) -> Result<(), MakerError> {
     // Broadcast all the incoming contracts.
     let (incomings, outgoings) = maker.wallet.read()?.find_unfinished_swapcoins();
     let is_hash_preimage_known = incomings.iter().any(|ic_sc| ic_sc.is_hash_preimage_known());

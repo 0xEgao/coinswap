@@ -7,12 +7,14 @@
 use crate::protocol::messages::{
     FidelityProof, MessageToMaker, TrackerClientToServer, TrackerServerToClient,
 };
-use bitcoin::{absolute::LockTime, Amount};
+use bitcoin::{absolute::LockTime, Amount, Txid};
 use bitcoind::bitcoincore_rpc::RpcApi;
 
 use std::{
+    convert::TryInto,
     io::ErrorKind,
     net::{Ipv4Addr, TcpListener, TcpStream},
+    str::FromStr,
     sync::{atomic::Ordering::Relaxed, Arc},
     thread::{self, sleep},
     time::Duration,
@@ -311,6 +313,13 @@ fn handle_client(maker: &Arc<Maker>, stream: &mut TcpStream) -> Result<(), Maker
             }
         }
 
+        while let Ok(outpoint) = maker.watch_rx.lock()?.try_recv() {
+            let request = TrackerClientToServer::Watch { outpoint };
+            if let Err(e) = send_message(stream, &request) {
+                log::error!("Failed to send Watch request to tracker: {e:?}");
+            }
+        }
+
         let unified = decode_unified_message(&bytes)?;
 
         match unified {
@@ -374,6 +383,33 @@ fn handle_client(maker: &Arc<Maker>, stream: &mut TcpStream) -> Result<(), Maker
                     if let Err(e) = send_message(stream, &response) {
                         log::error!("Failed to send Pong to tracker: {e:?}. Closing connection.");
                         continue;
+                    }
+                }
+                TrackerServerToClient::WatchResponse { mempool_tx } => {
+                    log::info!(
+                        "[{}] Received WatchResponse with mempool txns: {:?}",
+                        maker.config.network_port,
+                        mempool_tx
+                    );
+
+                    for tx in mempool_tx {
+                        let txid = Txid::from_str(&tx.txid).ok().unwrap();
+                        if let Ok(raw_tx) =
+                            maker.wallet.read()?.rpc.get_raw_transaction(&txid, None)
+                        {
+                            let tx = raw_tx;
+                            for input in tx.input.iter() {
+                                if input.witness.len() >= 2 && input.witness[1].len() == 32 {
+                                    let preimage: [u8; 32] = input.witness[1].try_into().unwrap();
+                                    let wallet_write = maker.wallet.write()?;
+                                    let (mut incomings, _) =
+                                        wallet_write.find_unfinished_swapcoins();
+                                    for incoming in incomings.iter_mut() {
+                                        incoming.hash_preimage = Some(preimage);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 _ => {
