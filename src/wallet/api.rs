@@ -839,6 +839,21 @@ impl Wallet {
             }
         }
 
+        for swept in self.store.swept_incoming_swapcoins_v2.values() {
+            if utxo.txid == *swept && utxo.vout == 0 {
+                if let Some(descriptor) = &utxo.descriptor {
+                    if let Some((_, addr_type, index)) = get_hd_path_from_descriptor(descriptor) {
+                        let path = format!("m/{addr_type}/{index}");
+                        return Ok(Some(UTXOSpendInfo::SweptCoin {
+                            input_value: utxo.amount,
+                            path,
+                            original_multisig_redeemscript: ScriptBuf::new(),
+                        }));
+                    }
+                }
+            }
+        }
+
         Ok(None)
     }
 
@@ -2407,8 +2422,8 @@ impl Wallet {
         let txid = self.send_tx(spending_tx)?;
 
         self.store
-            .swept_incoming_swapcoins
-            .insert(output.script_pubkey.clone(), output.script_pubkey);
+            .swept_incoming_swapcoins_v2
+            .insert(output.script_pubkey.clone(), contract_txid);
 
         // Remove from wallet storage
         self.store

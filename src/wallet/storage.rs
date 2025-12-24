@@ -53,7 +53,7 @@ pub(crate) struct WalletStore {
     pub(crate) swept_incoming_swapcoins: HashMap<ScriptBuf, ScriptBuf>,
     /// Map of swept incoming taproot swap coins (V2) to track swap balance
     /// Key: ScriptPubKey of swept UTXO, Value: Original contract txid
-    pub(super) swept_incoming_swapcoins_v2: HashMap<ScriptBuf, bitcoin::Txid>,
+    pub(crate) swept_incoming_swapcoins_v2: HashMap<ScriptBuf, bitcoin::Txid>,
     /// Map for all the fidelity bond information.
     pub(crate) fidelity_bond: HashMap<u32, FidelityBond>,
     pub(super) last_synced_height: Option<u64>,

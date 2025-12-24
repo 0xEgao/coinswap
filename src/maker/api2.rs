@@ -923,8 +923,8 @@ impl Maker {
             // [TODO] Look into the key value pair later, it shouldn't be both sriptpubkey
             wallet
                 .store
-                .swept_incoming_swapcoins
-                .insert(output_scriptpubkey.clone(), output_scriptpubkey);
+                .swept_incoming_swapcoins_v2
+                .insert(output_scriptpubkey.clone(), incoming_txid);
 
             wallet.remove_incoming_swapcoin_v2(&incoming_txid);
             log::info!(

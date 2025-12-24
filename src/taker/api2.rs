@@ -1679,8 +1679,8 @@ impl Taker {
         let output_scriptpubkey = destination_address.script_pubkey();
         self.wallet
             .store
-            .swept_incoming_swapcoins
-            .insert(output_scriptpubkey.clone(), output_scriptpubkey);
+            .swept_incoming_swapcoins_v2
+            .insert(output_scriptpubkey.clone(), incoming_contract_txid);
         log::info!(
             "Recorded swept incoming swapcoin V2: {}",
             incoming_contract_txid
