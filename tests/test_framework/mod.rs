@@ -60,7 +60,7 @@ use coinswap::{
 };
 use log::info;
 
-const BITCOIN_VERSION: &str = "28.1";
+const BITCOIN_VERSION: &str = "28.2";
 
 fn download_bitcoind_tarball(download_url: &str, retries: usize) -> Vec<u8> {
     for attempt in 1..=retries {
@@ -167,7 +167,7 @@ pub(crate) fn init_bitcoind(datadir: &std::path::Path, zmq_addr: String) -> Bitc
             Ok(path) => read_tarball_from_file(&path),
             Err(_) => {
                 let download_endpoint = env::var("BITCOIND_DOWNLOAD_ENDPOINT")
-                    .unwrap_or_else(|_| "http://172.81.178.3/bitcoin-binaries".to_owned());
+                    .unwrap_or_else(|_| "https://bitcoincore.org/bin/bitcoin-core-28.2".to_owned());
                 let url = format!("{download_endpoint}/{download_filename}");
                 download_bitcoind_tarball(&url, 5)
             }
