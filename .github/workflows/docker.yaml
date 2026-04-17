@@ -2,33 +2,63 @@ name: Docker CI
 
 on:
   push:
-    branches: [ master ]
+    branches: "*"
   pull_request:
-    branches: [ master ]
+    branches: "*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  image-portability:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Build Docker images
-      run: ./docker-setup build
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-    - name: Test makerd
-      run: docker run --rm coinswap/coinswap:latest makerd --help
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Test taker
-      run: docker run --rm coinswap/coinswap:latest taker --help
+      - name: Build image for target platform
+        run: |
+          docker buildx build \
+            --platform ${{ matrix.platform }} \
+            --file docker/Dockerfile \
+            --tag coinswap:ci \
+            --load \
+            .
 
-    - name: Wait for services to be healthy
-      run: |
-        echo "Waiting for services to start..."
-        sleep 30
+      - name: Smoke test makerd
+        run: docker run --rm --platform ${{ matrix.platform }} coinswap:ci makerd --help
 
-    - name: Check service status
-      run: ./docker-setup status
+      - name: Smoke test taker
+        run: docker run --rm --platform ${{ matrix.platform }} coinswap:ci taker --help
 
-    - name: Stop Coinswap stack
-      run: ./docker-setup stop
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: ./docker-setup build
+
+      - name: Test makerd
+        run: docker run --rm coinswap:latest makerd --help
+
+      - name: Test taker
+        run: docker run --rm coinswap:latest taker --help
