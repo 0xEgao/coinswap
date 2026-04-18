@@ -3,7 +3,8 @@
 use std::{fs, str::FromStr};
 
 use bitcoin::{consensus::deserialize, Block, BlockHash, Transaction, Txid};
-use bitcoind::bitcoincore_rpc::{json::GetBlockchainInfoResult, jsonrpc::base64, Auth};
+use bitcoincore_rpc::Auth;
+use bitcoincore_rpc::{json::GetBlockchainInfoResult, jsonrpc::base64};
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -63,7 +64,8 @@ impl BitcoinRest {
     }
 
     fn get_json<T: DeserializeOwned>(&self, path: &str) -> Result<T, WatcherError> {
-        Ok(self.http_get(path)?.json::<T>()?)
+        let resp = self.http_get(path)?;
+        Ok(serde_json::from_slice(resp.as_bytes())?)
     }
 
     fn get_bytes(&self, path: &str) -> Result<Vec<u8>, WatcherError> {

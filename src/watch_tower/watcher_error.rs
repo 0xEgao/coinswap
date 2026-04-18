@@ -18,7 +18,7 @@ pub enum WatcherError {
     /// I/O error surfaced from filesystem operations.
     IOError(std::io::Error),
     /// RPC error from bitcoind.
-    RPCError(bitcoind::bitcoincore_rpc::Error),
+    RPCError(bitcoincore_rpc::Error),
     /// HTTP transport error.
     HttpError(minreq::Error),
     /// HTTP endpoint returned a non-success status.
@@ -50,8 +50,8 @@ impl From<std::io::Error> for WatcherError {
     }
 }
 
-impl From<bitcoind::bitcoincore_rpc::Error> for WatcherError {
-    fn from(value: bitcoind::bitcoincore_rpc::Error) -> Self {
+impl From<bitcoincore_rpc::Error> for WatcherError {
+    fn from(value: bitcoincore_rpc::Error) -> Self {
         WatcherError::RPCError(value)
     }
 }

@@ -9,7 +9,7 @@ use crate::{
     wallet::{AddressType, Destination, RPCConfig, Wallet, WalletBackup, WalletError},
 };
 use bitcoin::{Address, Amount, OutPoint, Txid};
-use bitcoind::bitcoincore_rpc::{json::ListTransactionResult, RpcApi};
+use bitcoincore_rpc::{json::ListTransactionResult, RpcApi};
 use std::{
     path::{Path, PathBuf},
     str::FromStr,

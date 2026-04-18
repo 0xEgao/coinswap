@@ -12,9 +12,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use bitcoin::{Amount, Network, OutPoint, PublicKey, Transaction};
-use bitcoind::bitcoincore_rpc::RpcApi;
-
 use crate::{
     nostr_coinswap::NOSTR_RELAYS,
     protocol::common_messages::{FidelityProof, ProtocolVersion, SwapDetails},
@@ -26,6 +23,8 @@ use crate::{
     },
     watch_tower::service::WatchService,
 };
+use bitcoin::{Amount, Network, OutPoint, PublicKey, Transaction};
+use bitcoincore_rpc::RpcApi;
 
 #[cfg(feature = "integration-test")]
 pub use super::handlers::MakerBehavior;
@@ -466,7 +465,6 @@ impl MakerServer {
     /// Setup fidelity bond for this maker.
     pub fn setup_fidelity_bond(&self, maker_address: &str) -> Result<FidelityProof, MakerError> {
         use bitcoin::absolute::LockTime;
-        use bitcoind::bitcoincore_rpc::RpcApi;
 
         let highest_index = self
             .wallet
@@ -1166,7 +1164,7 @@ impl MakerTrait for MakerServer {
             utill::{redeemscript_to_scriptpubkey, REQUIRED_CONFIRMS},
         };
         use bitcoin::{hashes::Hash, OutPoint};
-        use bitcoind::bitcoincore_rpc::RpcApi;
+        use bitcoincore_rpc::RpcApi;
 
         log::info!(
             "[{}] Verifying proof of funding for swap {}",

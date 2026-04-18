@@ -1,4 +1,4 @@
-use bitcoind::bitcoincore_rpc::Auth;
+use bitcoincore_rpc::Auth;
 use clap::Parser;
 use coinswap::{
     maker::{bind_port_retry, start_server, MakerError, MakerServer, MakerServerConfig},

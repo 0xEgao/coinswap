@@ -15,7 +15,7 @@ use std::{
 };
 
 use bitcoin::{OutPoint, Txid};
-use bitcoind::bitcoincore_rpc::RpcApi;
+use bitcoincore_rpc::RpcApi;
 
 use crate::{
     utill::HEART_BEAT_INTERVAL,

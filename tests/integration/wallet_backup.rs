@@ -5,10 +5,8 @@ use std::{
 
 use bip39::rand;
 use bitcoin::{Address, Amount};
-use bitcoind::{
-    bitcoincore_rpc::{self, Auth},
-    BitcoinD,
-};
+use bitcoincore_rpc::Auth;
+use corepc_node::Node;
 use log::info;
 
 use coinswap::wallet::{AddressType, RPCConfig, Wallet, WalletBackup};
@@ -19,7 +17,7 @@ use super::test_framework::init_bitcoind;
 
 use super::test_framework::{generate_blocks, send_to_address};
 
-fn setup(test_name: String) -> (PathBuf, RPCConfig, PathBuf, BitcoinD, PathBuf, PathBuf) {
+fn setup(test_name: String) -> (PathBuf, RPCConfig, PathBuf, Node, PathBuf, PathBuf) {
     let root_dir = std::env::temp_dir().join(format!("coinswap-{}", rand::random::<u64>()));
     let temp_dir = root_dir.join("wallet-tests").join(test_name);
     let wallets_dir = temp_dir.join("");
@@ -57,7 +55,7 @@ fn setup(test_name: String) -> (PathBuf, RPCConfig, PathBuf, BitcoinD, PathBuf, 
     )
 }
 
-fn cleanup(bitcoind: &mut BitcoinD, root_dir: &Path) {
+fn cleanup(bitcoind: &mut Node, root_dir: &Path) {
     bitcoind.stop().unwrap();
     std::thread::sleep(std::time::Duration::from_secs(2));
     if root_dir.exists() {
@@ -66,11 +64,11 @@ fn cleanup(bitcoind: &mut BitcoinD, root_dir: &Path) {
 }
 
 fn send_and_mine(
-    bitcoind: &mut BitcoinD,
+    bitcoind: &mut Node,
     address: &Address,
     btc_amount: f64,
     blocks_to_generate: u64,
-) -> Result<(), bitcoincore_rpc::Error> {
+) -> Result<(), Box<dyn std::error::Error>> {
     send_to_address(bitcoind, address, Amount::from_btc(btc_amount)?);
     generate_blocks(bitcoind, blocks_to_generate);
     Ok(())

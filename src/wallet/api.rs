@@ -20,7 +20,7 @@ use bitcoin::{
     sighash::{EcdsaSighashType, Prevouts, SighashCache, TapSighashType},
     Address, Amount, OutPoint, PublicKey, Script, ScriptBuf, Transaction, TxOut, Txid, Weight,
 };
-use bitcoind::bitcoincore_rpc::{bitcoincore_rpc_json::ListUnspentResultEntry, Client, RpcApi};
+use bitcoincore_rpc::{bitcoincore_rpc_json::ListUnspentResultEntry, Client, RpcApi};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 

@@ -7,7 +7,7 @@ use crate::{
 
 use super::{rpc::RPCConfig, storage::WalletStore};
 use bitcoin::{bip32::Xpriv, Network};
-use bitcoind::bitcoincore_rpc::Client;
+use bitcoincore_rpc::Client;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 

@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
 pub extern crate bitcoin;
-pub extern crate bitcoind;
+pub extern crate corepc_node;
 
 pub mod error;
 pub mod fee_estimation;

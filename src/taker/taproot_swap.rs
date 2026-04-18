@@ -6,7 +6,7 @@ use bitcoin::{
     Amount, Network, OutPoint, PublicKey, ScriptBuf,
 };
 
-use bitcoind::bitcoincore_rpc::RpcApi;
+use bitcoincore_rpc::RpcApi;
 
 use crate::{
     protocol::{

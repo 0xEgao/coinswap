@@ -125,12 +125,11 @@ fn test_low_swap_liquidity() {
     info!("Low Swap liquidity test passed");
 }
 
-fn drain_maker_liquidity_after_fidelity(maker: &Arc<MakerServer>, bitcoind: &bitcoind::BitcoinD) {
+fn drain_maker_liquidity_after_fidelity(maker: &Arc<MakerServer>, bitcoind: &corepc_node::Node) {
     use bitcoin::{
         secp256k1::{rand::rngs::OsRng, Secp256k1, SecretKey},
         Address, Network,
     };
-    use bitcoind::bitcoincore_rpc::RpcApi;
 
     let secp = Secp256k1::new();
     let keypair = bitcoin::key::Keypair::from_secret_key(&secp, &SecretKey::new(&mut OsRng));

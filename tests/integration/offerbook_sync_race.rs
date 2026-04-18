@@ -1,7 +1,6 @@
 //! Stress and race-oriented tests for offerbook sync behavior (taker path).
 
 use bitcoin::Amount;
-use bitcoind::bitcoincore_rpc::RpcApi;
 use coinswap::{
     maker::{start_server, MakerBehavior},
     taker::{MakerProtocol, MakerState, TakerBehavior},

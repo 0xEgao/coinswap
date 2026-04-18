@@ -12,7 +12,7 @@ use bitcoin::{
     secp256k1::{Keypair, Message, Secp256k1},
     Address, Amount, OutPoint, PublicKey, ScriptBuf, Transaction, Txid,
 };
-use bitcoind::bitcoincore_rpc::RpcApi;
+use bitcoincore_rpc::RpcApi;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,

@@ -1,5 +1,5 @@
 use bitcoin::{Address, Amount};
-use bitcoind::bitcoincore_rpc::Auth;
+use bitcoincore_rpc::Auth;
 use clap::Parser;
 use coinswap::{
     protocol::ProtocolVersion,

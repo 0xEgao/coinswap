@@ -2,9 +2,10 @@
 //!
 use std::{convert::TryFrom, thread};
 
-use bitcoind::bitcoincore_rpc::{
+use bitcoincore_rpc::Auth;
+use bitcoincore_rpc::{
     json::{ListUnspentResultEntry, ScanningDetails},
-    Auth, Client, RpcApi,
+    Client, RpcApi,
 };
 use serde_json::{json, Value};
 

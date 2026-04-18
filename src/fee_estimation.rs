@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use bitcoind::bitcoincore_rpc::{json::EstimateMode, RpcApi};
+use bitcoincore_rpc::{json::EstimateMode, RpcApi};
 use serde::Deserialize;
 
 use crate::{error::FeeEstimatorError, wallet::Wallet};
@@ -114,9 +114,10 @@ impl FeeEstimator {
 
     /// Fetches live feerates for different blocktargets from mempool.space
     pub fn fetch_mempool_fees() -> Result<HashMap<BlockTarget, f64>, FeeEstimatorError> {
-        let response = minreq::get(MEMPOOL_FEES_API_URL)
-            .send()?
-            .json::<MempoolFeeResponse>()?;
+        let response: MempoolFeeResponse = serde_json::from_slice(
+            minreq::get(MEMPOOL_FEES_API_URL).send()?.as_bytes(),
+        )
+        .map_err(|e| FeeEstimatorError::MissingData(format!("Invalid mempool fee JSON: {e}")))?;
 
         let mut fees = HashMap::new();
 
@@ -160,10 +161,11 @@ impl FeeEstimator {
 
     /// Fetches (live + historical averages) feerates for different blocktargets from blockstream
     pub fn fetch_esplora_fees() -> Result<HashMap<BlockTarget, f64>, FeeEstimatorError> {
-        let response = minreq::get(ESPLORA_FEES_API_URL)
-            .send()?
-            .json::<EsploraFeeResponse>()?
-            .fees;
+        let response = serde_json::from_slice::<EsploraFeeResponse>(
+            minreq::get(ESPLORA_FEES_API_URL).send()?.as_bytes(),
+        )
+        .map_err(|e| FeeEstimatorError::MissingData(format!("Invalid esplora fee JSON: {e}")))?
+        .fees;
 
         let mut fees = HashMap::new();
 

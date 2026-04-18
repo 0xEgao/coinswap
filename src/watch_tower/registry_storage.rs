@@ -236,7 +236,7 @@ mod tests {
 
     use super::*;
     use bitcoin::{BlockHash, OutPoint, Txid};
-    use bitcoind::tempfile::TempDir;
+    use corepc_node::tempfile::TempDir;
 
     fn dummy_txid(_n: u8) -> Txid {
         Txid::from_str("a6eab3c14ab5272a58a5ba91505ba1a4b6d7a3a9fcbd187b6cd99a7b6d548cb7").unwrap()

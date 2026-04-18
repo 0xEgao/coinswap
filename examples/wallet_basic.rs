@@ -17,14 +17,12 @@
 //! ```
 
 use bitcoin::Amount;
-use bitcoind::{
-    bitcoincore_rpc::{Auth, RpcApi},
-    BitcoinD,
-};
+use bitcoincore_rpc::Auth;
 use coinswap::{
     utill::MIN_FEE_RATE,
     wallet::{AddressType, Destination, RPCConfig, Wallet},
 };
+use corepc_node::Node;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Coinswap Wallet Basic Example ===");
@@ -52,20 +50,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting Bitcoin Core in regtest mode...");
 
     // Setup bitcoind configuration
-    let mut conf = bitcoind::Conf::default();
+    let mut conf = corepc_node::Conf::default();
     conf.args.push("-txindex=1"); // Required for wallet sync
     conf.staticdir = Some(data_dir.join(".bitcoin"));
 
-    let exe_path = bitcoind::exe_path().unwrap();
-    let bitcoind = BitcoinD::with_conf(exe_path, &conf).unwrap();
+    let exe_path = corepc_node::exe_path().unwrap();
+    let bitcoind = Node::with_conf(exe_path, &conf).unwrap();
 
     // Generate initial 101 blocks (required for coinbase maturity)
-    let mining_address = bitcoind
-        .client
-        .get_new_address(None, None)
-        .unwrap()
-        .require_network(bitcoind::bitcoincore_rpc::bitcoin::Network::Regtest)
-        .unwrap();
+    let mining_address = bitcoind.client.new_address().unwrap();
     bitcoind
         .client
         .generate_to_address(101, &mining_address)
@@ -99,16 +92,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fund_amount = Amount::from_btc(0.05).unwrap();
     let _txid = bitcoind
         .client
-        .send_to_address(
-            &funding_address,
-            fund_amount,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        .send_to_address(&funding_address, fund_amount)
         .unwrap();
 
     // Mine a block to confirm the transaction

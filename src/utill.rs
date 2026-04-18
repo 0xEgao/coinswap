@@ -1,12 +1,13 @@
 //! Various utility and helper functions for both Taker and Maker.
 
+use bip39::rand::thread_rng;
 use bitcoin::{
     hashes::Hash,
-    key::{rand::thread_rng, Keypair},
+    key::Keypair,
     secp256k1::{Secp256k1, SecretKey},
     Amount, FeeRate, PublicKey, ScriptBuf, WitnessProgram, WitnessVersion,
 };
-use bitcoind::bitcoincore_rpc::json::ListUnspentResultEntry;
+use bitcoincore_rpc::json::ListUnspentResultEntry;
 use crossterm::{
     cursor::MoveTo,
     event::{

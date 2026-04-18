@@ -212,7 +212,7 @@ mod tests {
         hashes::Hash,
         transaction, Amount, OutPoint, ScriptBuf, Sequence, TxIn, TxOut, Txid, Witness,
     };
-    use bitcoind::tempfile::TempDir;
+    use corepc_node::tempfile::TempDir;
 
     #[cfg(not(feature = "integration-test"))]
     const TEST_ADDR: &[u8] = b"aslkdfjbiakdsfn.onion:9050#500";

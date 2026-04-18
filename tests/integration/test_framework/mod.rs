@@ -31,10 +31,8 @@ use nostr_rs_relay::{config, server::start_server};
 use flate2::read::GzDecoder;
 use tar::Archive;
 
-use bitcoind::{
-    bitcoincore_rpc::{Auth, RpcApi},
-    BitcoinD,
-};
+use bitcoincore_rpc::Auth;
+use corepc_node::Node;
 
 use coinswap::{
     maker::{MakerBehavior, MakerServer, MakerServerConfig},
@@ -123,8 +121,8 @@ fn get_bitcoind_filename(os: &str, arch: &str) -> String {
 }
 
 /// Initiate the bitcoind backend.
-pub(crate) fn init_bitcoind(datadir: &std::path::Path, zmq_addr: String) -> BitcoinD {
-    let mut conf = bitcoind::Conf::default();
+pub(crate) fn init_bitcoind(datadir: &std::path::Path, zmq_addr: String) -> Node {
+    let mut conf = corepc_node::Conf::default();
     conf.args.push("-txindex=1"); //txindex is must, or else wallet sync won't work.
     conf.args.push("-rest=1"); // required for watchtower REST backend
     let raw_tx = format!("-zmqpubrawtx={}", zmq_addr);
@@ -177,11 +175,11 @@ pub(crate) fn init_bitcoind(datadir: &std::path::Path, zmq_addr: String) -> Bitc
 
     env::set_var("BITCOIND_EXE", bitcoin_exe_home.join("bitcoind"));
 
-    let exe_path = bitcoind::exe_path().unwrap();
+    let exe_path = corepc_node::exe_path().unwrap();
 
     log::info!("📁 Executable path: {exe_path:?}");
 
-    let bitcoind = BitcoinD::with_conf(exe_path, &conf).unwrap();
+    let bitcoind = Node::with_conf(exe_path, &conf).unwrap();
 
     // Generate initial 101 blocks
     generate_blocks(&bitcoind, 101);
@@ -191,26 +189,28 @@ pub(crate) fn init_bitcoind(datadir: &std::path::Path, zmq_addr: String) -> Bitc
 }
 
 /// Generate Blocks in regtest node.
-pub(crate) fn generate_blocks(bitcoind: &BitcoinD, n: u64) {
-    let mining_address = match bitcoind.client.get_new_address(None, None) {
-        Ok(addr) => addr
-            .require_network(bitcoind::bitcoincore_rpc::bitcoin::Network::Regtest)
-            .unwrap(),
+pub(crate) fn generate_blocks(bitcoind: &Node, n: u64) {
+    let mining_address = match bitcoind.client.new_address() {
+        Ok(addr) => addr,
         Err(_) => return,
     };
-    let _ = bitcoind.client.generate_to_address(n, &mining_address);
+    let _ = bitcoind
+        .client
+        .generate_to_address(n as usize, &mining_address);
 }
 
 /// Send coins to a bitcoin address.
 #[allow(dead_code)]
 pub(crate) fn send_to_address(
-    bitcoind: &BitcoinD,
+    bitcoind: &Node,
     addrs: &bitcoin::Address,
     amount: bitcoin::Amount,
 ) -> bitcoin::Txid {
     bitcoind
         .client
-        .send_to_address(addrs, amount, None, None, None, None, None, None)
+        .send_to_address(addrs, amount)
+        .unwrap()
+        .txid()
         .unwrap()
 }
 
@@ -239,7 +239,7 @@ pub fn wait_for_makers_setup(makers: &[Arc<MakerServer>], timeout_secs: u64) {
 #[allow(dead_code)]
 pub fn fund_taker(
     taker: &Taker,
-    bitcoind: &bitcoind::BitcoinD,
+    bitcoind: &corepc_node::Node,
     utxo_count: u32,
     utxo_value: Amount,
     address_type: AddressType,
@@ -280,7 +280,7 @@ pub fn fund_taker(
 #[allow(dead_code)]
 pub fn fund_makers(
     makers: &[Arc<MakerServer>],
-    bitcoind: &bitcoind::BitcoinD,
+    bitcoind: &corepc_node::Node,
     utxo_count: u32,
     utxo_value: Amount,
     address_type: AddressType,
@@ -378,7 +378,7 @@ pub fn verify_maker_pre_swap_balances(makers: &[Arc<MakerServer>]) -> Vec<Amount
 /// Handles initializing, operating and cleaning up of all backend processes. Bitcoind, Taker and Makers.
 #[allow(dead_code)]
 pub struct TestFramework {
-    pub(super) bitcoind: BitcoinD,
+    pub(super) bitcoind: Node,
     pub(super) temp_dir: PathBuf,
     pub(super) nostr_relay_url: String,
     shutdown: AtomicBool,

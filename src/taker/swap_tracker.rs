@@ -590,7 +590,7 @@ pub(crate) fn now_secs() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bitcoind::tempfile::TempDir;
+    use corepc_node::tempfile::TempDir;
 
     fn make_test_record(swap_id: &str, phase: SwapPhase) -> SwapRecord {
         SwapRecord {

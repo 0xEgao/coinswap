@@ -8,7 +8,7 @@ use bitcoin::{
     Address, Amount, OutPoint, Transaction,
 };
 
-use bitcoind::bitcoincore_rpc::RpcApi;
+use bitcoincore_rpc::RpcApi;
 
 use crate::{utill::calculate_fee_sats, wallet::Destination};
 

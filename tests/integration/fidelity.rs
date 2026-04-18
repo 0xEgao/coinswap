@@ -13,7 +13,6 @@
 //!   and new bond creation can properly consume them.
 
 use bitcoin::{absolute::LockTime, Amount};
-use bitcoind::bitcoincore_rpc::RpcApi;
 use coinswap::{
     maker::start_server,
     taker::TakerBehavior,
@@ -135,7 +134,7 @@ fn test_fidelity() {
             .unwrap()
             .create_fidelity(
                 Amount::from_sat(8000000),
-                LockTime::from_height((bitcoind.client.get_block_count().unwrap() as u32) + 950)
+                LockTime::from_height((bitcoind.client.get_block_count().unwrap().0 as u32) + 950)
                     .unwrap(),
                 None,
                 MIN_FEE_RATE,
@@ -185,7 +184,7 @@ fn test_fidelity() {
     let mut required_height = first_maturity_height;
 
     loop {
-        let current_height = bitcoind.client.get_block_count().unwrap() as u32;
+        let current_height = bitcoind.client.get_block_count().unwrap().0 as u32;
 
         if current_height < required_height {
             log::info!(
@@ -291,7 +290,7 @@ fn test_fidelity_spending() {
 
     // Create fidelity bond
     let short_timelock_height =
-        (bitcoind.client.get_block_count().unwrap() as u32) + TIMELOCK_DURATION;
+        (bitcoind.client.get_block_count().unwrap().0 as u32) + TIMELOCK_DURATION;
     let fidelity_amount = Amount::from_sat(FIDELITY_AMOUNT);
 
     let fidelity_index = {
@@ -326,7 +325,7 @@ fn test_fidelity_spending() {
     maker.wallet.write().unwrap().sync_and_save().unwrap();
 
     // Make fidelity bond expire
-    while (bitcoind.client.get_block_count().unwrap() as u32) < short_timelock_height {
+    while (bitcoind.client.get_block_count().unwrap().0 as u32) < short_timelock_height {
         generate_blocks(bitcoind, 10);
     }
     generate_blocks(bitcoind, 5);
@@ -392,11 +391,7 @@ fn test_fidelity_spending() {
     log::info!("Testing regular transactions avoid fidelity bond UTXO");
 
     for i in 0..3 {
-        let external_addr = bitcoind
-            .client
-            .get_new_address(None, None)
-            .unwrap()
-            .assume_checked();
+        let external_addr = bitcoind.client.new_address().unwrap();
         let tx_result = {
             let mut wallet = maker.wallet.write().unwrap();
             let selected_utxos = wallet
@@ -504,7 +499,7 @@ fn test_fidelity_spending() {
             .unwrap()
             .create_fidelity(
                 Amount::from_sat(6_000_000),
-                LockTime::from_height((bitcoind.client.get_block_count().unwrap() as u32) + 100)
+                LockTime::from_height((bitcoind.client.get_block_count().unwrap().0 as u32) + 100)
                     .unwrap(),
                 None,
                 MIN_FEE_RATE,

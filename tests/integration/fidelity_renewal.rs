@@ -4,7 +4,6 @@
 //! when they expire while the server is running.
 
 use bitcoin::Amount;
-use bitcoind::bitcoincore_rpc::RpcApi;
 use coinswap::{maker::start_server, taker::TakerBehavior, wallet::AddressType};
 
 use super::test_framework::*;
@@ -68,7 +67,7 @@ fn test_fidelity_auto_renewal() {
     };
 
     // Calculate blocks to mine to expire the bond
-    let current_height = bitcoind.client.get_block_count().unwrap() as u32;
+    let current_height = bitcoind.client.get_block_count().unwrap().0 as u32;
     let blocks_to_mine = if bond_locktime > current_height {
         (bond_locktime - current_height) + 10
     } else {
@@ -83,12 +82,7 @@ fn test_fidelity_auto_renewal() {
     );
 
     // Mine blocks to expire the bond (in batches to avoid RPC timeout)
-    let address = bitcoind
-        .client
-        .get_new_address(None, None)
-        .unwrap()
-        .require_network(bitcoin::Network::Regtest)
-        .unwrap();
+    let address = bitcoind.client.new_address().unwrap();
 
     let batch_size = 100u64;
     let mut remaining = blocks_to_mine as u64;
@@ -96,7 +90,7 @@ fn test_fidelity_auto_renewal() {
         let to_mine = std::cmp::min(remaining, batch_size);
         bitcoind
             .client
-            .generate_to_address(to_mine, &address)
+            .generate_to_address(to_mine as usize, &address)
             .unwrap();
         remaining -= to_mine;
         if remaining > 0 {
@@ -108,7 +102,7 @@ fn test_fidelity_auto_renewal() {
     log::info!(
         "Mined {} blocks. New height: {}",
         blocks_to_mine,
-        new_height
+        new_height.0
     );
 
     log::info!("Waiting for automatic fidelity bond renewal (up to 90 seconds)...");

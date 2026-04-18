@@ -662,7 +662,7 @@ fn recover_from_swap(
     outgoing_swapcoins: Vec<crate::wallet::swapcoin::OutgoingSwapCoin>,
 ) -> Result<(), MakerError> {
     use super::swap_tracker::{MakerRecoveryPhase, MakerSwapPhase};
-    use bitcoind::bitcoincore_rpc::RpcApi;
+    use bitcoincore_rpc::RpcApi;
 
     // For Taproot, get_timelock() returns an absolute CLTV height.
     // For Legacy, it returns a relative CSV offset — but Legacy recovery

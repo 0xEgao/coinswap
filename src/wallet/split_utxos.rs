@@ -2,7 +2,7 @@ use super::Wallet;
 use crate::wallet::api::UTXOSpendInfo;
 use bip39::rand::{thread_rng, Rng};
 use bitcoin::Amount;
-use bitcoind::bitcoincore_rpc::{json::ListUnspentResultEntry, RpcApi};
+use bitcoincore_rpc::{json::ListUnspentResultEntry, RpcApi};
 
 // Used for calculating fee optimization scores
 struct FeeOptimizationResult {

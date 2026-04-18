@@ -4,7 +4,7 @@
 
 use bip39::rand;
 use bitcoin::{address::NetworkChecked, Address, Amount};
-use bitcoind::{bitcoincore_rpc::RpcApi, tempfile::env::temp_dir, BitcoinD};
+use corepc_node::{tempfile::env::temp_dir, Node};
 
 use serde_json::Value;
 use std::{fs, path::PathBuf, process::Command, str::FromStr};
@@ -17,7 +17,7 @@ use log::info;
 struct TakerCli {
     data_dir: PathBuf,
     temp_dir: PathBuf,
-    bitcoind: BitcoinD,
+    bitcoind: Node,
     zmq_addr: String,
 }
 

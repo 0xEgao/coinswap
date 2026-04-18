@@ -28,7 +28,7 @@ pub enum WalletError {
     /// Represents an error returned by the Bitcoin Core RPC client.
     ///
     /// Typically occurs during communication with a Bitcoin node.
-    Rpc(bitcoind::bitcoincore_rpc::Error),
+    Rpc(bitcoincore_rpc::Error),
 
     /// Represents an error related to BIP32 (Hierarchical Deterministic Wallets).
     ///
@@ -91,8 +91,8 @@ impl From<std::io::Error> for WalletError {
     }
 }
 
-impl From<bitcoind::bitcoincore_rpc::Error> for WalletError {
-    fn from(value: bitcoind::bitcoincore_rpc::Error) -> Self {
+impl From<bitcoincore_rpc::Error> for WalletError {
+    fn from(value: bitcoincore_rpc::Error) -> Self {
         Self::Rpc(value)
     }
 }

@@ -26,7 +26,7 @@ use bitcoin::{
     },
     Amount, OutPoint, PublicKey, Txid,
 };
-use bitcoind::bitcoincore_rpc::{json::ListUnspentResultEntry, RpcApi};
+use bitcoincore_rpc::{json::ListUnspentResultEntry, RpcApi};
 use socks::Socks5Stream;
 
 use crate::{

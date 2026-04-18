@@ -20,7 +20,7 @@ use std::{
 
 use super::swapcoin::{IncomingSwapCoin, OutgoingSwapCoin, WatchOnlySwapCoin};
 
-use bitcoind::bitcoincore_rpc::bitcoincore_rpc_json::ListUnspentResultEntry;
+use bitcoincore_rpc::bitcoincore_rpc_json::ListUnspentResultEntry;
 
 /// Address type supported by the wallet for HD address generation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -156,7 +156,7 @@ impl WalletStore {
 mod tests {
     use super::*;
     use bip39::rand::{thread_rng, Rng};
-    use bitcoind::tempfile::tempdir;
+    use corepc_node::tempfile::tempdir;
 
     #[test]
     fn test_write_and_read_wallet_to_disk() {

@@ -8,7 +8,7 @@ use bitcoin::{
     absolute::LockTime, script::PushBytesBuf, transaction::Version, Address, Amount, OutPoint,
     ScriptBuf, Sequence, Transaction, TxIn, TxOut, Witness,
 };
-use bitcoind::bitcoincore_rpc::{json::ListUnspentResultEntry, RpcApi};
+use bitcoincore_rpc::{json::ListUnspentResultEntry, RpcApi};
 
 use crate::{
     utill::calculate_fee_sats,
@@ -203,7 +203,7 @@ impl Wallet {
                     let bond = self
                         .store
                         .fidelity_bond
-                        .get(index)
+                        .get(&index)
                         .ok_or(FidelityError::BondDoesNotExist)?;
                     if bond.is_spent {
                         return Err(FidelityError::BondAlreadyRedeemed.into());
@@ -223,7 +223,7 @@ impl Wallet {
                     input_value,
                 } => {
                     let outgoing_swap_coin = self
-                        .find_outgoing_swapcoin_by_multisig(swapcoin_multisig_redeemscript)
+                        .find_outgoing_swapcoin_by_multisig(&swapcoin_multisig_redeemscript)
                         .expect("Cannot find Outgoing Swap Coin");
                     let timelock = outgoing_swap_coin
                         .get_timelock()
@@ -245,7 +245,7 @@ impl Wallet {
                     input_value,
                 } => {
                     let incoming_swap_coin = self
-                        .find_incoming_swapcoin_by_multisig(swapcoin_multisig_redeemscript)
+                        .find_incoming_swapcoin_by_multisig(&swapcoin_multisig_redeemscript)
                         .expect("Cannot find Incoming Swap Coin");
                     tx.input.push(TxIn {
                         previous_output: OutPoint {
