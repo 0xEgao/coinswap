@@ -877,8 +877,8 @@ pub fn interactive_select(
 
     loop {
         match read()? {
-            Event::Mouse(mouse_event) => {
-                if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) {
+            Event::Mouse(mouse_event)
+                if mouse_event.kind == MouseEventKind::Down(MouseButton::Left) => {
                     let click_row = mouse_event.row;
                     let click_col = mouse_event.column;
 
@@ -895,20 +895,17 @@ pub fn interactive_select(
                         }
                     }
                 }
-            }
             Event::Key(key_event) => match key_event.code {
-                KeyCode::PageUp => {
-                    if scroll_offset > 0 {
+                KeyCode::PageUp
+                    if scroll_offset > 0 => {
                         scroll_offset -= 1;
                         render_utxo_grid(&mut stdout, &choices, &selected, scroll_offset)?;
                     }
-                }
-                KeyCode::PageDown => {
-                    if scroll_offset < max_scroll {
+                KeyCode::PageDown
+                    if scroll_offset < max_scroll => {
                         scroll_offset += 1;
                         render_utxo_grid(&mut stdout, &choices, &selected, scroll_offset)?;
                     }
-                }
                 // Numlock your keyboard, key 3 is PageDown and key 9 is PageUp
                 KeyCode::Up => {
                     scroll_offset = scroll_offset.saturating_sub(visible_rows);
