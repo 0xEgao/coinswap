@@ -5,7 +5,6 @@ pub extern crate bitcoind;
 
 pub mod error;
 pub mod fee_estimation;
-pub mod hotpath_cli;
 pub mod maker;
 pub mod nostr_coinswap;
 pub mod protocol;

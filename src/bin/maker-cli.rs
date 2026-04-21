@@ -6,28 +6,6 @@ use coinswap::{
     utill::{read_message, send_message, MIN_FEE_RATE},
 };
 
-struct HotpathGuardHolder {
-    #[cfg(feature = "hotpath")]
-    _guard: hotpath::HotpathGuard,
-}
-
-impl HotpathGuardHolder {
-    fn start(name: &'static str) -> Self {
-        #[cfg(feature = "hotpath")]
-        {
-            Self {
-                _guard: hotpath::HotpathGuardBuilder::new(name).build(),
-            }
-        }
-
-        #[cfg(not(feature = "hotpath"))]
-        {
-            let _ = name;
-            Self {}
-        }
-    }
-}
-
 /// A simple command line app to operate the makerd server.
 ///
 /// The app works as an RPC client for makerd, useful to access the server, retrieve information,
@@ -90,8 +68,6 @@ enum Commands {
 }
 
 fn main() -> ExitCode {
-    let _hotpath_guard = HotpathGuardHolder::start("maker-cli");
-
     let cli = match App::try_parse() {
         Ok(args) => args,
         Err(e) => {

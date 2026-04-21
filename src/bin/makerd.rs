@@ -1,7 +1,6 @@
 use bitcoind::bitcoincore_rpc::Auth;
 use clap::Parser;
 use coinswap::{
-    hotpath_cli::HotpathCliGuard,
     maker::{bind_port_retry, start_server, MakerError, MakerServer, MakerServerConfig},
     utill::{parse_proxy_auth, setup_maker_logger},
     wallet::RPCConfig,
@@ -68,8 +67,6 @@ struct Cli {
 }
 
 fn main() -> ExitCode {
-    let _hotpath_guard = HotpathCliGuard::start("makerd");
-
     let args = match Cli::try_parse() {
         Ok(args) => args,
         Err(e) => {
@@ -130,8 +127,7 @@ fn run(args: Cli) -> Result<(), MakerError> {
 
     let maker = Arc::new(MakerServer::init(config)?);
 
-    // Ensure Ctrl+C triggers a graceful shutdown so destructors run (including hotpath report
-    // printing) instead of an abrupt process termination.
+    // Ensure Ctrl+C triggers a graceful shutdown instead of abrupt process termination.
     {
         let maker_for_signal = Arc::clone(&maker);
         if let Err(e) = ctrlc::set_handler(move || {

@@ -1,0 +1,64 @@
+name: hotpath-push
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Create metrics directory
+        run: mkdir -p /tmp/metrics
+
+      - name: Benchmark (maker focus)
+        env:
+          BITCOIND_DOWNLOAD_ENDPOINT: https://bitcoincore.org/bin/bitcoin-core-28.1
+          HOTPATH_OUTPUT_FORMAT: json
+          HOTPATH_OUTPUT_PATH: /tmp/metrics/maker.json
+          HOTPATH_FOCUS: coinswap::maker
+          HOTPATH_FUNCTIONS_LIMIT: "0"
+          HOTPATH_FUNCTIONS_NAME_DEPTH: "0"
+          HOTPATH_THREADS_LIMIT: "0"
+        run: |
+          cargo run --release --example hotpath_maker_swap \
+            --features='integration-test hotpath'
+
+      - name: Benchmark (taker focus)
+        env:
+          BITCOIND_DOWNLOAD_ENDPOINT: https://bitcoincore.org/bin/bitcoin-core-28.1
+          HOTPATH_OUTPUT_FORMAT: json
+          HOTPATH_OUTPUT_PATH: /tmp/metrics/taker.json
+          HOTPATH_FOCUS: coinswap::taker
+          HOTPATH_FUNCTIONS_LIMIT: "0"
+          HOTPATH_FUNCTIONS_NAME_DEPTH: "0"
+          HOTPATH_THREADS_LIMIT: "0"
+        run: |
+          cargo run --release --example hotpath_taker_swap \
+            --features='integration-test hotpath'
+
+      - name: Save metadata
+        run: |
+          echo '${{ github.sha }}' > /tmp/metrics/sha.txt
+          echo '${{ github.ref }}' > /tmp/metrics/ref.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hotpath-metrics-${{ github.sha }}
+          path: /tmp/metrics/
+          retention-days: 7

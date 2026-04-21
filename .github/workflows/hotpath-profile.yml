@@ -1,0 +1,93 @@
+name: hotpath-profile
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Create metrics directory
+        run: mkdir -p /tmp/metrics
+
+      - name: Head benchmark (maker focus)
+        env:
+          BITCOIND_DOWNLOAD_ENDPOINT: https://bitcoincore.org/bin/bitcoin-core-28.1
+          HOTPATH_OUTPUT_FORMAT: json
+          HOTPATH_OUTPUT_PATH: /tmp/metrics/head_maker.json
+          HOTPATH_FOCUS: coinswap::maker
+          HOTPATH_FUNCTIONS_LIMIT: "0"
+          HOTPATH_FUNCTIONS_NAME_DEPTH: "0"
+          HOTPATH_THREADS_LIMIT: "0"
+        run: |
+          cargo run --release --example hotpath_maker_swap \
+            --features='integration-test hotpath'
+
+      - name: Head benchmark (taker focus)
+        env:
+          BITCOIND_DOWNLOAD_ENDPOINT: https://bitcoincore.org/bin/bitcoin-core-28.1
+          HOTPATH_OUTPUT_FORMAT: json
+          HOTPATH_OUTPUT_PATH: /tmp/metrics/head_taker.json
+          HOTPATH_FOCUS: coinswap::taker
+          HOTPATH_FUNCTIONS_LIMIT: "0"
+          HOTPATH_FUNCTIONS_NAME_DEPTH: "0"
+          HOTPATH_THREADS_LIMIT: "0"
+        run: |
+          cargo run --release --example hotpath_taker_swap \
+            --features='integration-test hotpath'
+
+      - name: Checkout base
+        run: git checkout ${{ github.event.pull_request.base.sha }}
+
+      - name: Base benchmark (maker focus)
+        env:
+          BITCOIND_DOWNLOAD_ENDPOINT: https://bitcoincore.org/bin/bitcoin-core-28.1
+          HOTPATH_OUTPUT_FORMAT: json
+          HOTPATH_OUTPUT_PATH: /tmp/metrics/base_maker.json
+          HOTPATH_FOCUS: coinswap::maker
+          HOTPATH_FUNCTIONS_LIMIT: "0"
+          HOTPATH_FUNCTIONS_NAME_DEPTH: "0"
+          HOTPATH_THREADS_LIMIT: "0"
+        run: |
+          cargo run --release --example hotpath_maker_swap \
+            --features='integration-test hotpath'
+
+      - name: Base benchmark (taker focus)
+        env:
+          BITCOIND_DOWNLOAD_ENDPOINT: https://bitcoincore.org/bin/bitcoin-core-28.1
+          HOTPATH_OUTPUT_FORMAT: json
+          HOTPATH_OUTPUT_PATH: /tmp/metrics/base_taker.json
+          HOTPATH_FOCUS: coinswap::taker
+          HOTPATH_FUNCTIONS_LIMIT: "0"
+          HOTPATH_FUNCTIONS_NAME_DEPTH: "0"
+          HOTPATH_THREADS_LIMIT: "0"
+        run: |
+          cargo run --release --example hotpath_taker_swap \
+            --features='integration-test hotpath'
+
+      - name: Save PR metadata
+        run: |
+          echo '${{ github.event.pull_request.number }}' > /tmp/metrics/pr_number.txt
+          echo '${{ github.base_ref }}' > /tmp/metrics/base_ref.txt
+          echo '${{ github.head_ref }}' > /tmp/metrics/head_ref.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: profile-metrics
+          path: /tmp/metrics/
+          retention-days: 1

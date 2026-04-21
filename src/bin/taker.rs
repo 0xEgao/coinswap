@@ -13,8 +13,6 @@ use coinswap::{
 use log::LevelFilter;
 use serde_json::{json, to_string_pretty};
 use std::{path::PathBuf, process::ExitCode, str::FromStr};
-
-use coinswap::hotpath_cli::HotpathCliGuard;
 /// A simple command line app to operate as coinswap client.
 ///
 /// The app works as a regular Bitcoin wallet with the added capability to perform coinswaps. The app
@@ -235,8 +233,6 @@ fn display_offer(wallet: &Wallet, candidate: &MakerOfferCandidate) -> Result<Str
 }
 
 fn main() -> ExitCode {
-    let _hotpath_guard = HotpathCliGuard::start("taker");
-
     let args = match Cli::try_parse() {
         Ok(args) => args,
         Err(e) => {
