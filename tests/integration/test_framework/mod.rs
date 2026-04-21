@@ -47,6 +47,168 @@ use log::info;
 
 const BITCOIN_VERSION: &str = "28.1";
 
+#[cfg(feature = "hotpath")]
+static HOTPATH_ACTIVE: AtomicBool = AtomicBool::new(false);
+
+#[cfg(feature = "hotpath")]
+struct IntegrationHotpathGuard {
+    guard: Option<hotpath::HotpathGuard>,
+    output_path: PathBuf,
+}
+
+#[cfg(feature = "hotpath")]
+impl IntegrationHotpathGuard {
+    fn start(unique_id: &str) -> Self {
+        // Serialize integration tests under hotpath so we never have >1 HotpathGuard alive.
+        while HOTPATH_ACTIVE
+            .compare_exchange(
+                false,
+                true,
+                std::sync::atomic::Ordering::SeqCst,
+                std::sync::atomic::Ordering::SeqCst,
+            )
+            .is_err()
+        {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+
+        // In tests, stdout/stderr are usually captured. Default to a JSON file output so the
+        // report is available even without `-- --nocapture`.
+        if env::var_os("HOTPATH_OUTPUT_FORMAT").is_none() {
+            env::set_var("HOTPATH_OUTPUT_FORMAT", "json-pretty");
+        }
+
+        let output_path = match env::var_os("HOTPATH_OUTPUT_PATH") {
+            Some(existing) => PathBuf::from(existing),
+            None => {
+                let pid = std::process::id();
+                let out_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/hotpath");
+                let _ = fs::create_dir_all(&out_dir);
+                let out_path = out_dir.join(format!("integration_{pid}_{unique_id}.json"));
+                env::set_var("HOTPATH_OUTPUT_PATH", out_path.to_string_lossy().as_ref());
+                out_path
+            }
+        };
+
+        // Avoid binding a metrics server during integration tests (port conflicts / flakiness).
+        if env::var_os("HOTPATH_METRICS_SERVER_OFF").is_none() {
+            env::set_var("HOTPATH_METRICS_SERVER_OFF", "1");
+        }
+
+        let guard = hotpath::HotpathGuardBuilder::new("integration").build();
+        Self {
+            guard: Some(guard),
+            output_path,
+        }
+    }
+}
+
+#[cfg(feature = "hotpath")]
+fn print_hotpath_tables_from_json(report_path: &Path) {
+    fn truncate(s: &str, max: usize) -> &str {
+        if s.len() <= max {
+            s
+        } else {
+            // Truncate at a UTF-8 boundary.
+            let mut end = max;
+            while end > 0 && !s.is_char_boundary(end) {
+                end -= 1;
+            }
+            &s[..end]
+        }
+    }
+
+    let mut json = String::new();
+    let mut read_ok = false;
+    for _ in 0..20 {
+        match fs::read_to_string(report_path) {
+            Ok(s) => {
+                json = s;
+                read_ok = true;
+                break;
+            }
+            Err(_) => std::thread::sleep(Duration::from_millis(25)),
+        }
+    }
+    if !read_ok {
+        eprintln!("[hotpath] report not readable at {}", report_path.display());
+        return;
+    }
+
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(&json) else {
+        eprintln!(
+            "[hotpath] failed to parse JSON report at {}",
+            report_path.display()
+        );
+        return;
+    };
+
+    fn print_section(v: &serde_json::Value, key: &str) {
+        let Some(section) = v.get(key) else {
+            return;
+        };
+        let elapsed = section
+            .get("time_elapsed")
+            .and_then(|x| x.as_str())
+            .unwrap_or("?");
+
+        let Some(rows) = section.get("data").and_then(|x| x.as_array()) else {
+            return;
+        };
+
+        println!("\n[hotpath] {key} (elapsed {elapsed})");
+        println!(
+            "{:<80} {:>7} {:>12} {:>12} {:>12} {:>9}",
+            "name", "calls", "total", "avg", "p95", "%total"
+        );
+        println!("{}", "-".repeat(80 + 7 + 12 + 12 + 12 + 9 + 5));
+
+        for row in rows.iter().take(50) {
+            let name = row.get("name").and_then(|x| x.as_str()).unwrap_or("?");
+            let calls = row
+                .get("calls")
+                .and_then(|x| x.as_u64())
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "?".to_owned());
+            let total = row.get("total").and_then(|x| x.as_str()).unwrap_or("?");
+            let avg = row.get("avg").and_then(|x| x.as_str()).unwrap_or("?");
+            let p95 = row.get("p95").and_then(|x| x.as_str()).unwrap_or("?");
+            let pct = row
+                .get("percent_total")
+                .and_then(|x| x.as_str())
+                .unwrap_or("?");
+
+            println!(
+                "{:<80} {:>7} {:>12} {:>12} {:>12} {:>9}",
+                truncate(name, 80),
+                calls,
+                total,
+                avg,
+                p95,
+                pct
+            );
+        }
+    }
+
+    print_section(&v, "functions_timing");
+    print_section(&v, "functions_alloc");
+}
+
+#[cfg(feature = "hotpath")]
+impl Drop for IntegrationHotpathGuard {
+    fn drop(&mut self) {
+        // Ensure the hotpath report is emitted before we allow another test to start a guard.
+        let _ = self.guard.take();
+
+        // Also print a visual bench table to the test output.
+        // (hotpath itself can only emit one format at a time; we emit JSON to file and render
+        // a human-readable table by parsing that JSON.)
+        print_hotpath_tables_from_json(&self.output_path);
+
+        HOTPATH_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
 fn download_bitcoind_tarball(download_url: &str, retries: usize) -> Vec<u8> {
     for attempt in 1..=retries {
         let response = minreq::get(download_url).send();
@@ -191,6 +353,7 @@ pub(crate) fn init_bitcoind(datadir: &std::path::Path, zmq_addr: String) -> Bitc
 }
 
 /// Generate Blocks in regtest node.
+#[hotpath::measure]
 pub(crate) fn generate_blocks(bitcoind: &BitcoinD, n: u64) {
     let mining_address = match bitcoind.client.get_new_address(None, None) {
         Ok(addr) => addr
@@ -218,6 +381,7 @@ pub(crate) fn send_to_address(
 ///
 /// Panics if any maker's `is_setup_complete` flag doesn't become true within `timeout_secs`.
 #[allow(dead_code)]
+#[hotpath::measure]
 pub fn wait_for_makers_setup(makers: &[Arc<MakerServer>], timeout_secs: u64) {
     let start = Instant::now();
     let timeout = Duration::from_secs(timeout_secs);
@@ -237,6 +401,7 @@ pub fn wait_for_makers_setup(makers: &[Arc<MakerServer>], timeout_secs: u64) {
 
 /// Fund taker and verify balance
 #[allow(dead_code)]
+#[hotpath::measure]
 pub fn fund_taker(
     taker: &Taker,
     bitcoind: &bitcoind::BitcoinD,
@@ -278,6 +443,7 @@ pub fn fund_taker(
 
 /// Fund makers and verify their balances
 #[allow(dead_code)]
+#[hotpath::measure]
 pub fn fund_makers(
     makers: &[Arc<MakerServer>],
     bitcoind: &bitcoind::BitcoinD,
@@ -325,6 +491,7 @@ pub fn fund_makers(
 
 /// Verify maker pre-swap balances
 #[allow(dead_code)]
+#[hotpath::measure]
 pub fn verify_maker_pre_swap_balances(makers: &[Arc<MakerServer>]) -> Vec<Amount> {
     let mut maker_spendable_balance = Vec::new();
 
@@ -384,10 +551,14 @@ pub struct TestFramework {
     shutdown: AtomicBool,
     nostr_relay_shutdown: mpsc::Sender<()>,
     nostr_relay_handle: Option<JoinHandle<()>>,
+
+    #[cfg(feature = "hotpath")]
+    _hotpath: IntegrationHotpathGuard,
 }
 
 impl TestFramework {
     /// Assert that a log message exists in the debug.log file
+    #[hotpath::measure]
     pub fn assert_log(&self, expected_message: &str, log_path: &str) {
         match std::fs::read_to_string(log_path) {
             Ok(log_contents) => {
@@ -410,6 +581,8 @@ impl TestFramework {
     /// This creates Taker and MakerServer instances that support
     /// both Legacy (ECDSA) and Taproot (MuSig2) protocols using message types.
     #[allow(clippy::type_complexity)]
+    #[hotpath::measure]
+    #[hotpath::measure]
     pub fn init(
         makers_config_map: Vec<(u16, Option<u16>)>,
         taker_behavior: Vec<TakerBehavior>,
@@ -417,6 +590,10 @@ impl TestFramework {
     ) -> (Arc<Self>, Vec<Taker>, Vec<Arc<MakerServer>>, JoinHandle<()>) {
         // Setup directory — use a unique suffix so tests can run in parallel
         let unique_id = format!("coinswap-{}", rand::random::<u64>());
+
+        #[cfg(feature = "hotpath")]
+        let hotpath_guard = IntegrationHotpathGuard::start(&unique_id);
+
         let temp_dir = env::temp_dir().join(unique_id);
         // Remove if previously existing
         if temp_dir.exists() {
@@ -444,6 +621,9 @@ impl TestFramework {
             shutdown,
             nostr_relay_shutdown,
             nostr_relay_handle: Some(nostr_relay_handle),
+
+            #[cfg(feature = "hotpath")]
+            _hotpath: hotpath_guard,
         });
 
         // Translate a RpcConfig from the test framework.
@@ -525,6 +705,8 @@ impl TestFramework {
     }
 
     /// Stop bitcoind, nostr relay, and clean up all test data.
+    #[hotpath::measure]
+    #[hotpath::measure]
     pub fn stop(&self) {
         log::info!("🛑 Stopping Test Framework");
         self.shutdown.store(true, Relaxed);
@@ -563,6 +745,7 @@ pub struct TrackerLoggerHandle {
 impl TrackerLoggerHandle {
     /// Signal the background logger to stop and wait for it to finish.
     #[allow(dead_code)]
+    #[hotpath::measure]
     pub fn stop(mut self) {
         self.shutdown.store(true, Relaxed);
         if let Some(h) = self.handle.take() {
@@ -590,6 +773,7 @@ impl Drop for TrackerLoggerHandle {
 /// logger.stop();
 /// ```
 #[allow(dead_code)]
+#[hotpath::measure]
 pub fn spawn_tracker_logger(data_dir: PathBuf, interval: Duration) -> TrackerLoggerHandle {
     use coinswap::taker::swap_tracker::SwapTracker;
 

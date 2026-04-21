@@ -188,6 +188,7 @@ impl Wallet {
     /// And in conjunction with coin_selection, also tries to minimize the number of inputs used for fee optimization.
     /// This either creates dynamic splits with bounded, similar, randomized amounts OR gives a simple 1-1 output.
     /// It never creates a signature i.e a tiny change/target utxo, as that would be a privacy leak.
+    #[hotpath::measure]
     pub fn create_dynamic_splits(
         &self,
         inital_selected_inputs: Vec<(ListUnspentResultEntry, UTXOSpendInfo)>,

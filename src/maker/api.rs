@@ -164,6 +164,7 @@ impl MakerServerConfig {
     /// If `config_path` is `None`, defaults to `~/.coinswap/maker/config.toml`.
     /// If the file doesn't exist or is empty, a default config file is created.
     /// Fields missing from the file fall back to defaults.
+    #[hotpath::measure]
     pub fn new(config_path: Option<&Path>) -> Result<Self, WalletError> {
         let default_config_path = get_maker_dir().join("config.toml");
         let config_path = config_path.unwrap_or(&default_config_path);
@@ -251,6 +252,7 @@ impl MakerServerConfig {
     }
 
     /// Write the current configuration to a TOML file.
+    #[hotpath::measure]
     pub fn write_to_file(&self, path: &Path) -> std::io::Result<()> {
         let toml_data = format!(
             "\
@@ -313,6 +315,7 @@ pub struct ThreadPool {
 
 impl ThreadPool {
     /// Create a new thread pool.
+    #[hotpath::measure]
     pub fn new(port: u16) -> Self {
         Self {
             threads: Mutex::new(Vec::new()),
@@ -321,12 +324,14 @@ impl ThreadPool {
     }
 
     /// Add a thread to the pool.
+    #[hotpath::measure]
     pub fn add_thread(&self, handle: JoinHandle<()>) {
         let mut threads = self.threads.lock().unwrap();
         threads.push(handle);
     }
 
     /// Join all threads in the pool.
+    #[hotpath::measure]
     pub fn join_all_threads(&self) -> Result<(), MakerError> {
         let mut threads = self
             .threads
@@ -401,6 +406,7 @@ pub struct IdleSwapData {
 
 impl MakerServer {
     /// Initialize a new maker server with full setup.
+    #[hotpath::measure]
     pub fn init(config: MakerServerConfig) -> Result<Self, MakerError> {
         let data_dir = config.data_dir.clone();
         std::fs::create_dir_all(&data_dir).map_err(MakerError::IO)?;
@@ -459,11 +465,13 @@ impl MakerServer {
     }
 
     /// Check if shutdown has been requested.
+    #[hotpath::measure]
     pub fn is_shutdown(&self) -> bool {
         self.shutdown.load(Ordering::Relaxed)
     }
 
     /// Setup fidelity bond for this maker.
+    #[hotpath::measure]
     pub fn setup_fidelity_bond(&self, maker_address: &str) -> Result<FidelityProof, MakerError> {
         use bitcoin::absolute::LockTime;
         use bitcoind::bitcoincore_rpc::RpcApi;
@@ -663,6 +671,7 @@ impl MakerServer {
     }
 
     /// Check if maker has enough liquidity for swaps.
+    #[hotpath::measure]
     pub fn check_swap_liquidity(&self) -> Result<(), MakerError> {
         let sleep_increment = 10u64;
         let mut sleep_duration = 0u64;
@@ -713,6 +722,7 @@ impl MakerServer {
     /// Atomically find and remove stale entries from `ongoing_swaps`.
     /// Returns swap data for each idle swap.
     /// Only drains entries where `outgoing_swapcoins` is non-empty (otherwise nothing to recover).
+    #[hotpath::measure]
     pub fn drain_idle_swaps(&self, timeout: Duration) -> Vec<IdleSwapData> {
         let mut swaps = self.ongoing_swaps.lock().unwrap();
         let mut idle = Vec::new();
@@ -742,12 +752,14 @@ impl MakerServer {
     }
 
     /// Remove a completed swap's entry from `ongoing_swaps`.
+    #[hotpath::measure]
     pub fn remove_swap_state(&self, swap_id: &str) {
         let mut swaps = self.ongoing_swaps.lock().unwrap();
         swaps.remove(swap_id);
     }
 
     /// Check if any swaps are currently in progress.
+    #[hotpath::measure]
     pub fn has_ongoing_swaps(&self) -> bool {
         !self.ongoing_swaps.lock().unwrap().is_empty()
     }

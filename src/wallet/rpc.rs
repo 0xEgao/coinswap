@@ -73,6 +73,7 @@ impl Wallet {
     ///
     /// This method first synchronizes the wallet with the Bitcoin Core node,
     /// then persists the wallet state in the disk.
+    #[hotpath::measure]
     pub fn sync_and_save(&mut self) -> Result<(), WalletError> {
         log::info!("Sync Started for {:?}", &self.store.file_name);
         self.sync_no_fail();

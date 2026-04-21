@@ -129,6 +129,7 @@ impl Default for ConnectionState {
 
 impl ConnectionState {
     /// Create a new connection state for a specific protocol version.
+    #[hotpath::measure]
     pub fn new(protocol: ProtocolVersion) -> Self {
         ConnectionState {
             protocol,
@@ -137,16 +138,19 @@ impl ConnectionState {
     }
 
     /// Update the last activity timestamp.
+    #[hotpath::measure]
     pub fn touch(&mut self) {
         self.last_activity = Instant::now();
     }
 
     /// Check if the swap has timed out.
+    #[hotpath::measure]
     pub fn is_timed_out(&self, timeout_secs: u64) -> bool {
         self.last_activity.elapsed().as_secs() > timeout_secs
     }
 
     /// Enforce that the current phase matches one of the expected phases.
+    #[hotpath::measure]
     pub fn expect_phase(&self, expected: &[SwapPhase]) -> Result<(), MakerError> {
         if expected.contains(&self.phase) {
             Ok(())
@@ -163,6 +167,7 @@ impl ConnectionState {
 
     /// Verify that the incoming message's swap_id matches the state's swap_id.
     /// If the state has no swap_id yet (initial setup), this is a no-op.
+    #[hotpath::measure]
     pub fn check_swap_id(&self, msg_swap_id: &str) -> Result<(), MakerError> {
         if let Some(ref expected) = self.swap_id {
             if expected != msg_swap_id {
@@ -312,6 +317,7 @@ pub struct MakerConfig {
 }
 
 /// Message handler
+#[hotpath::measure]
 pub fn handle_message<M: Maker>(
     maker: &Arc<M>,
     state: &mut ConnectionState,

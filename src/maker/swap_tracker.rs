@@ -161,6 +161,7 @@ pub struct MakerSwapTracker {
 
 impl MakerSwapTracker {
     /// Load tracker from disk or create a new empty one.
+    #[hotpath::measure]
     pub fn load_or_create(data_dir: &Path) -> Result<Self, MakerError> {
         let path = data_dir.join("maker_swap_tracker.cbor");
         let data = if path.exists() {
@@ -200,6 +201,7 @@ impl MakerSwapTracker {
     }
 
     /// Upsert a swap record and flush to disk.
+    #[hotpath::measure]
     pub fn save_record(&mut self, record: &MakerSwapRecord) -> Result<(), MakerError> {
         self.data
             .swaps
@@ -208,11 +210,13 @@ impl MakerSwapTracker {
     }
 
     /// Get a reference to a swap record by ID.
+    #[hotpath::measure]
     pub fn get_record(&self, swap_id: &str) -> Option<&MakerSwapRecord> {
         self.data.swaps.get(swap_id)
     }
 
     /// Get a mutable reference to a swap record by ID.
+    #[hotpath::measure]
     pub fn get_record_mut(&mut self, swap_id: &str) -> Option<&mut MakerSwapRecord> {
         self.data.swaps.get_mut(swap_id)
     }
@@ -221,6 +225,7 @@ impl MakerSwapTracker {
     ///
     /// Includes records where phase is not `Recovered`/`Completed` or
     /// recovery phase has not reached `CleanedUp`.
+    #[hotpath::measure]
     pub fn incomplete_swaps(&self) -> Vec<&MakerSwapRecord> {
         self.data
             .swaps
@@ -235,6 +240,7 @@ impl MakerSwapTracker {
     }
 
     /// Log all swap records at INFO level.
+    #[hotpath::measure]
     pub fn log_state(&self) {
         if self.data.swaps.is_empty() {
             log::info!("[MakerSwapTracker] (empty — no records)");

@@ -60,6 +60,7 @@ pub struct FileRegistry {
 
 impl FileRegistry {
     /// Loads registry data from disk, creating the file and parent directories if missing.
+    #[hotpath::measure]
     pub fn load<P: Into<PathBuf>>(path: P) -> Self {
         let path = path.into();
         let data = if path.exists() {
@@ -130,23 +131,27 @@ impl FileRegistry {
 
 impl FileRegistry {
     /// Inserts a watch request and flushes the registry to disk.
+    #[hotpath::measure]
     pub fn upsert_watch(&mut self, req: &WatchRequest) {
         self.with_data(|data| data.watches.insert(req.outpoint, req.clone()));
         self.flush();
     }
 
     /// Removes a watch request for the given outpoint and flushes the registry to disk.
+    #[hotpath::measure]
     pub fn remove_watch(&mut self, outpoint: OutPoint) {
         self.with_data(|data| data.watches.remove(&outpoint));
         self.flush();
     }
 
     /// Returns all current watch requests.
+    #[hotpath::measure]
     pub fn list_watches(&self) -> Vec<WatchRequest> {
         self.with_data(|data| data.watches.values().cloned().collect())
     }
 
     /// Returns all stored maker fidelity records.
+    #[hotpath::measure]
     pub fn list_fidelity(&self, height: u32) -> HashSet<Fidelity> {
         self.with_data(|data| {
             data.fidelity = data
@@ -160,6 +165,7 @@ impl FileRegistry {
     }
 
     /// Inserts a new fidelity record.
+    #[hotpath::measure]
     pub fn insert_fidelity(&self, txid: Txid, fidelity_announcement: FidelityAnnouncement) -> bool {
         let fidelity = Fidelity {
             txid,
@@ -172,23 +178,27 @@ impl FileRegistry {
     }
 
     /// Removes fidelity records matching the given txid.
+    #[hotpath::measure]
     pub fn remove_fidelity(&mut self, txid: Txid) {
         self.with_data(|data| data.fidelity.retain(|f| f.txid != txid));
         self.flush();
     }
 
     /// Persists the latest processed checkpoint to disk.
+    #[hotpath::measure]
     pub fn save_checkpoint(&mut self, cp: Checkpoint) {
         self.with_data(|data| data.checkpoint = Some(cp));
         self.flush();
     }
 
     /// Loads the most recently saved checkpoint, if any.
+    #[hotpath::measure]
     pub fn load_checkpoint(&self) -> Option<Checkpoint> {
         self.data.lock().unwrap().checkpoint.clone()
     }
 
     /// Loads the latest processed Nostr event timestamp for a relay.
+    #[hotpath::measure]
     pub fn load_nostr_cursor(&self, relay_url: &str) -> Option<u64> {
         let cursor = self.with_data(|data| data.nostr_cursors.get(relay_url).copied());
         log::debug!(
@@ -200,6 +210,7 @@ impl FileRegistry {
     }
 
     /// Persists the latest processed Nostr event timestamp for a relay.
+    #[hotpath::measure]
     pub fn save_nostr_cursor(&self, relay_url: &str, created_at_secs: u64) {
         let (prev, next, updated) = self.with_data(|data| {
             let entry = data.nostr_cursors.entry(relay_url.to_string()).or_insert(0);

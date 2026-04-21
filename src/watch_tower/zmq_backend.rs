@@ -28,6 +28,7 @@ pub struct ZmqBackend {
 
 impl ZmqBackend {
     /// Connects to a ZMQ endpoint and subscribes to rawtx and rawblock topics.
+    #[hotpath::measure]
     pub fn new(endpoint: &str) -> Self {
         let ctx = zmq::Context::new();
         let socket = ctx.socket(zmq::SUB).expect("socket");
@@ -57,6 +58,7 @@ impl ZmqBackend {
 
 impl ZmqBackend {
     /// Non-blocking poll for the next backend event.
+    #[hotpath::measure]
     pub fn poll(&mut self) -> Option<BackendEvent> {
         let (topic, payload) = self.recv_event()?;
 

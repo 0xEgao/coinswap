@@ -24,6 +24,7 @@ pub struct BitcoinRest {
 
 impl BitcoinRest {
     /// Constructs a new REST wrapper using the provided configuration.
+    #[hotpath::measure]
     pub fn new(rpc_config: RPCConfig) -> Result<Self, WatcherError> {
         let base_url = normalize_rest_base_url(&rpc_config.url);
         let auth_header = build_auth_header(&rpc_config.auth)?;
@@ -73,6 +74,7 @@ impl BitcoinRest {
 
     /// Get txids of all transactions in the mempool.
     /// Uses `/rest/mempool/contents.json` and returns the map keys.
+    #[hotpath::measure]
     pub fn get_raw_mempool(&self) -> Result<Vec<Txid>, WatcherError> {
         let obj: serde_json::Map<String, serde_json::Value> =
             self.get_json("/rest/mempool/contents.json")?;
@@ -81,6 +83,7 @@ impl BitcoinRest {
 
     /// Fetches a full transaction by txid.
     /// Uses the binary endpoint `/rest/tx/<txid>.bin`.
+    #[hotpath::measure]
     pub fn get_raw_tx(&self, txid: &Txid) -> Result<Transaction, WatcherError> {
         let bytes = self.get_bytes(&format!("/rest/tx/{txid}.bin"))?;
         Ok(deserialize::<Transaction>(&bytes)?)
@@ -88,12 +91,14 @@ impl BitcoinRest {
 
     /// Returns chain metadata.
     /// Uses `/rest/chaininfo.json`.
+    #[hotpath::measure]
     pub fn get_blockchain_info(&self) -> Result<GetBlockchainInfoResult, WatcherError> {
         self.get_json("/rest/chaininfo.json")
     }
 
     /// Retrieves the block hash at a given height.
     /// Uses `/rest/blockhashbyheight/<height>.hex`.
+    #[hotpath::measure]
     pub fn get_block_hash(&self, height: u64) -> Result<BlockHash, WatcherError> {
         let resp = self.http_get(&format!("/rest/blockhashbyheight/{height}.hex"))?;
         let hex = resp
@@ -104,18 +109,21 @@ impl BitcoinRest {
     }
 
     /// Returns the current chain height.
+    #[hotpath::measure]
     pub fn get_block_count(&self) -> Result<u64, WatcherError> {
         Ok(self.get_blockchain_info()?.blocks)
     }
 
     /// Fetches a block by hash.
     /// Uses the binary endpoint `/rest/block/<hash>.bin`.
+    #[hotpath::measure]
     pub fn get_block(&self, hash: BlockHash) -> Result<Block, WatcherError> {
         let bytes = self.get_bytes(&format!("/rest/block/{hash}.bin"))?;
         Ok(deserialize::<Block>(&bytes)?)
     }
 
     /// Processes transactions in the mempool and updates registry.
+    #[hotpath::measure]
     pub fn process_mempool(&self, registry: &mut FileRegistry) -> Result<(), WatcherError> {
         let txids = self.get_raw_mempool()?;
         for txid in &txids {

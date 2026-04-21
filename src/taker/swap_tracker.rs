@@ -410,6 +410,7 @@ pub struct SwapTracker {
 
 impl SwapTracker {
     /// Load tracker from disk or create a new empty one.
+    #[hotpath::measure]
     pub fn load_or_create(data_dir: &Path) -> Result<Self, TakerError> {
         let path = data_dir.join("swap_tracker.cbor");
         let data = if path.exists() {
@@ -445,6 +446,7 @@ impl SwapTracker {
     }
 
     /// Upsert a swap record and flush to disk.
+    #[hotpath::measure]
     pub fn save_record(&mut self, record: &SwapRecord) -> Result<(), TakerError> {
         self.data
             .swaps
@@ -453,6 +455,7 @@ impl SwapTracker {
     }
 
     /// Remove a swap record and flush to disk.
+    #[hotpath::measure]
     pub fn remove_record(&mut self, swap_id: &str) -> Result<(), TakerError> {
         self.data.swaps.remove(swap_id);
         self.flush()
@@ -462,6 +465,7 @@ impl SwapTracker {
     ///
     /// Includes `Failed` records where `recovery.phase < CleanedUp`
     /// (crash during recovery) so recovery can resume.
+    #[hotpath::measure]
     pub fn incomplete_swaps(&self) -> Vec<&SwapRecord> {
         self.data
             .swaps
@@ -475,11 +479,13 @@ impl SwapTracker {
     }
 
     /// Get a reference to a swap record by ID.
+    #[hotpath::measure]
     pub fn get_record(&self, swap_id: &str) -> Option<&SwapRecord> {
         self.data.swaps.get(swap_id)
     }
 
     /// Get a mutable reference to a swap record by ID.
+    #[hotpath::measure]
     pub fn get_record_mut(&mut self, swap_id: &str) -> Option<&mut SwapRecord> {
         self.data.swaps.get_mut(swap_id)
     }
@@ -487,6 +493,7 @@ impl SwapTracker {
     /// Mutate a record in-place and atomically flush to disk.
     ///
     /// Returns `Ok(true)` if the record was found and updated, `Ok(false)` if not found.
+    #[hotpath::measure]
     pub fn update_and_save<F>(&mut self, swap_id: &str, f: F) -> Result<bool, TakerError>
     where
         F: FnOnce(&mut SwapRecord),
@@ -507,6 +514,7 @@ impl SwapTracker {
     /// - Late-phase swaps (FundsBroadcast, ContractsExchanged, etc.) are marked as Failed
     ///   so wallet-driven recovery can handle them.
     /// - Completed swaps are left untouched.
+    #[hotpath::measure]
     pub fn cleanup_incomplete(&mut self) {
         let incomplete_ids: Vec<String> = self
             .incomplete_swaps()
@@ -551,6 +559,7 @@ impl SwapTracker {
     }
 
     /// Log all swap records at INFO level.
+    #[hotpath::measure]
     pub fn log_state(&self) {
         if self.data.swaps.is_empty() {
             log::info!("[SwapTracker] (empty — no records)");

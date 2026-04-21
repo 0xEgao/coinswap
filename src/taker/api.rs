@@ -161,30 +161,35 @@ impl Default for TakerInitConfig {
 
 impl TakerInitConfig {
     /// Set the data directory.
+    #[hotpath::measure]
     pub fn with_data_dir(mut self, path: PathBuf) -> Self {
         self.data_dir = Some(path);
         self
     }
 
     /// Set the wallet file name.
+    #[hotpath::measure]
     pub fn with_wallet_name(mut self, name: String) -> Self {
         self.wallet_file_name = Some(name);
         self
     }
 
     /// Set the RPC configuration.
+    #[hotpath::measure]
     pub fn with_rpc_config(mut self, rpc_config: RPCConfig) -> Self {
         self.rpc_config = Some(rpc_config);
         self
     }
 
     /// Set the ZMQ address.
+    #[hotpath::measure]
     pub fn with_zmq_addr(mut self, addr: String) -> Self {
         self.zmq_addr = addr;
         self
     }
 
     /// Set the Nostr relay URLs.
+    #[hotpath::measure]
     pub fn with_nostr_relays(mut self, relays: Vec<String>) -> Self {
         self.nostr_relays = relays;
         self
@@ -213,6 +218,7 @@ pub struct SwapParams {
 
 impl SwapParams {
     /// Create new swap parameters.
+    #[hotpath::measure]
     pub fn new(protocol: ProtocolVersion, send_amount: Amount, maker_count: usize) -> Self {
         SwapParams {
             protocol,
@@ -226,18 +232,21 @@ impl SwapParams {
     }
 
     /// Set the number of transaction splits.
+    #[hotpath::measure]
     pub fn with_tx_count(mut self, tx_count: u32) -> Self {
         self.tx_count = tx_count;
         self
     }
 
     /// Set the required confirmations.
+    #[hotpath::measure]
     pub fn with_required_confirms(mut self, confirms: u32) -> Self {
         self.required_confirms = confirms;
         self
     }
 
     /// Set manual UTXO selection.
+    #[hotpath::measure]
     pub fn with_utxos(mut self, outpoints: Vec<OutPoint>) -> Self {
         self.manually_selected_outpoints = Some(outpoints);
         self
@@ -245,6 +254,7 @@ impl SwapParams {
 
     /// Set preferred maker addresses (e.g. `"host:port"` strings).
     /// When set, these makers are used directly instead of auto-discovery.
+    #[hotpath::measure]
     pub fn with_preferred_makers(mut self, makers: Vec<String>) -> Self {
         self.preferred_makers = Some(makers);
         self
@@ -495,6 +505,7 @@ impl Taker {
     }
 
     /// Initialize a new taker.
+    #[hotpath::measure]
     pub fn init(config: TakerInitConfig) -> Result<Self, TakerError> {
         let data_dir = config.data_dir.clone().unwrap_or_else(get_taker_dir);
         std::fs::create_dir_all(&data_dir)?;
@@ -690,17 +701,20 @@ impl Taker {
     }
 
     /// Get reference to the wallet.
+    #[hotpath::measure]
     pub fn get_wallet(&self) -> &Arc<RwLock<Wallet>> {
         &self.wallet
     }
 
     /// Log the current swap tracker state at INFO level.
+    #[hotpath::measure]
     pub fn log_tracker_state(&self) {
         self.swap_tracker.lock().unwrap().log_state();
     }
 
     /// Check whether the background recovery loop has completed.
     /// Returns `true` if no recovery is needed or if all contracts are resolved.
+    #[hotpath::measure]
     pub fn is_recovery_complete(&self) -> bool {
         match &self.recovery_loop {
             Some(loop_) => loop_.is_complete(),
@@ -712,6 +726,7 @@ impl Taker {
     ///
     /// No funds are committed. The caller reviews the summary and then calls
     /// `start_coinswap` with the returned `swap_id` to execute.
+    #[hotpath::measure]
     pub fn prepare_coinswap(&mut self, params: SwapParams) -> Result<SwapSummary, TakerError> {
         log::info!(
             "Preparing coinswap: amount={}, makers={}, protocol={:?}",
@@ -833,6 +848,7 @@ impl Taker {
     ///
     /// Commits funds on-chain: creates funding transactions, exchanges
     /// contracts with makers, finalizes, and sweeps.
+    #[hotpath::measure]
     pub fn start_coinswap(&mut self, swap_id: &str) -> Result<SwapReport, TakerError> {
         let swap_start_time = Instant::now();
 
@@ -2317,6 +2333,7 @@ impl Taker {
     ///
     /// All recovery attempts, per-contract outcome tracking, phase transitions,
     /// and wallet cleanup are handled by the `RecoveryLoop`.
+    #[hotpath::measure]
     pub fn recover_active_swap(&mut self) -> Result<(), TakerError> {
         log::warn!("Starting swap recovery...");
 
@@ -2422,16 +2439,19 @@ impl Taker {
     // ── CLI helper methods ──────────────────────────────────────────────
 
     /// Returns the current offerbook snapshot.
+    #[hotpath::measure]
     pub fn fetch_offers(&self) -> Result<OfferBook, TakerError> {
         Ok(self.offerbook.snapshot())
     }
 
     /// Triggers a manual offerbook sync and blocks until it completes.
+    #[hotpath::measure]
     pub fn sync_offerbook_and_wait(&self) -> Result<(), TakerError> {
         self.offer_sync_handle.sync_and_wait()
     }
 
     /// Restore a wallet from a backup file (static — no taker instance needed).
+    #[hotpath::measure]
     pub fn restore_wallet(
         data_dir: Option<PathBuf>,
         wallet_file_name: Option<String>,

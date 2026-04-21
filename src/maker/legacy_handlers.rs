@@ -22,6 +22,7 @@ use crate::{
 };
 
 /// Handle a Legacy protocol message.
+#[hotpath::measure]
 pub fn handle_legacy_message<M: Maker>(
     maker: &Arc<M>,
     state: &mut ConnectionState,

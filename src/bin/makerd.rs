@@ -1,11 +1,16 @@
 use bitcoind::bitcoincore_rpc::Auth;
 use clap::Parser;
 use coinswap::{
+    hotpath_cli::HotpathCliGuard,
     maker::{bind_port_retry, start_server, MakerError, MakerServer, MakerServerConfig},
     utill::{parse_proxy_auth, setup_maker_logger},
     wallet::RPCConfig,
 };
-use std::{path::PathBuf, sync::Arc};
+use std::{
+    path::PathBuf,
+    process::ExitCode,
+    sync::{atomic::Ordering::Relaxed, Arc},
+};
 
 /// Coinswap Maker Server
 ///
@@ -62,8 +67,28 @@ struct Cli {
     pub password: Option<String>,
 }
 
-fn main() -> Result<(), MakerError> {
-    let args = Cli::parse();
+fn main() -> ExitCode {
+    let _hotpath_guard = HotpathCliGuard::start("makerd");
+
+    let args = match Cli::try_parse() {
+        Ok(args) => args,
+        Err(e) => {
+            let code = e.exit_code();
+            let _ = e.print();
+            return ExitCode::from(code.clamp(0, 255) as u8);
+        }
+    };
+
+    match run(args) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("{e:?}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run(args: Cli) -> Result<(), MakerError> {
     setup_maker_logger(log::LevelFilter::Info, args.data_directory.clone());
 
     let data_dir = args
@@ -104,6 +129,19 @@ fn main() -> Result<(), MakerError> {
     config.write_to_file(&config_path)?;
 
     let maker = Arc::new(MakerServer::init(config)?);
+
+    // Ensure Ctrl+C triggers a graceful shutdown so destructors run (including hotpath report
+    // printing) instead of an abrupt process termination.
+    {
+        let maker_for_signal = Arc::clone(&maker);
+        if let Err(e) = ctrlc::set_handler(move || {
+            log::info!("Ctrl+C received, initiating shutdown...");
+            maker_for_signal.shutdown.store(true, Relaxed);
+        }) {
+            log::warn!("Failed to install Ctrl+C handler: {e}");
+        }
+    }
+
     start_server(maker)?;
 
     Ok(())

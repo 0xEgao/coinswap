@@ -28,26 +28,31 @@ pub struct FeeEstimator {
 
 impl FeeEstimator {
     /// Create a new FeeEstimator with optional wallet for Bitcoin Core estimates
+    #[hotpath::measure]
     pub fn new(wallet: Option<Wallet>) -> Self {
         Self { wallet }
     }
 
     /// Get fee rate for next block (highest priority)
+    #[hotpath::measure]
     pub fn get_high_priority_rate(&self) -> Result<f64, FeeEstimatorError> {
         self.get_fee_rate(BlockTarget::Fastest)
     }
 
     /// Get fee rate for ~6 blocks (standard priority)
+    #[hotpath::measure]
     pub fn get_mid_priority_rate(&self) -> Result<f64, FeeEstimatorError> {
         self.get_fee_rate(BlockTarget::Standard)
     }
 
     /// Get fee rate for ~24 blocks (economy priority)
+    #[hotpath::measure]
     pub fn get_low_priority_rate(&self) -> Result<f64, FeeEstimatorError> {
         self.get_fee_rate(BlockTarget::Economy)
     }
 
     /// Get a specific fee rate with defaults (non-conservative, no multiplier)
+    #[hotpath::measure]
     pub fn get_fee_rate(&self, target: BlockTarget) -> Result<f64, FeeEstimatorError> {
         let fees = self.estimate_fees()?;
         fees.get(&target).copied().ok_or_else(|| {
@@ -113,6 +118,7 @@ impl FeeEstimator {
     }
 
     /// Fetches live feerates for different blocktargets from mempool.space
+    #[hotpath::measure]
     pub fn fetch_mempool_fees() -> Result<HashMap<BlockTarget, f64>, FeeEstimatorError> {
         let response = minreq::get(MEMPOOL_FEES_API_URL)
             .send()?
@@ -159,6 +165,7 @@ impl FeeEstimator {
     }
 
     /// Fetches (live + historical averages) feerates for different blocktargets from blockstream
+    #[hotpath::measure]
     pub fn fetch_esplora_fees() -> Result<HashMap<BlockTarget, f64>, FeeEstimatorError> {
         let response = minreq::get(ESPLORA_FEES_API_URL)
             .send()?

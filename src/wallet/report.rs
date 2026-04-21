@@ -237,6 +237,7 @@ impl SwapReport {
     }
 
     /// Create a successful maker swap report.
+    #[hotpath::measure]
     pub fn maker_success(
         swap_id: String,
         start_time: Instant,
@@ -267,6 +268,7 @@ impl SwapReport {
     }
 
     /// Create a maker recovery report (hashlock or timelock).
+    #[hotpath::measure]
     pub fn maker_recovery(
         swap_id: String,
         recovery_type: &str,
@@ -302,6 +304,7 @@ impl SwapReport {
     }
 
     /// Create a taker swap report for any status (success, failed, or recovery).
+    #[hotpath::measure]
     pub fn taker_report(mut report: Self) -> Self {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -314,6 +317,7 @@ impl SwapReport {
     }
 
     /// Emit a minimal taker recovery report to disk and console.
+    #[hotpath::measure]
     pub fn emit_taker_recovery_report(
         data_dir: &Path,
         swap_id: String,
@@ -346,6 +350,7 @@ impl SwapReport {
     /// Save the report to disk as a JSON file.
     ///
     /// The report is saved to `{data_dir}/swap_reports/{role}_{status}_{timestamp}_{swap_id}.json`.
+    #[hotpath::measure]
     pub fn save_to_disk(&self, data_dir: &Path) -> std::io::Result<()> {
         let reports_dir = data_dir.join("swap_reports");
         std::fs::create_dir_all(&reports_dir)?;
@@ -397,6 +402,7 @@ impl SwapReport {
     ///
     /// Displays a human-readable summary of the swap including status,
     /// amounts, transaction IDs, and fee breakdown (for taker reports).
+    #[hotpath::measure]
     pub fn print(&self) {
         let role_str = self.role.to_string().to_uppercase();
 

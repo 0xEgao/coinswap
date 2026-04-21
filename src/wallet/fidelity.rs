@@ -224,11 +224,13 @@ pub struct FidelityBond {
 
 impl FidelityBond {
     /// The UTXO outpoint backing this bond.
+    #[hotpath::measure]
     pub fn outpoint(&self) -> OutPoint {
         self.outpoint
     }
 
     /// Whether the fidelity bond is spent or not
+    #[hotpath::measure]
     pub fn is_spent(&self) -> bool {
         self.is_spent
     }
@@ -268,11 +270,13 @@ impl FidelityBond {
 // Wallet APIs related to fidelity bonds.
 impl Wallet {
     /// Get a reference to the fidelity bond store
+    #[hotpath::measure]
     pub fn get_fidelity_bonds(&self) -> &HashMap<u32, FidelityBond> {
         &self.store.fidelity_bond
     }
 
     /// Display the fidelity bonds
+    #[hotpath::measure]
     pub fn display_fidelity_bonds(&self) -> Result<String, WalletError> {
         let serialized = self
             .store
@@ -301,6 +305,7 @@ impl Wallet {
     }
 
     /// Get the highest value fidelity bond. Returns None, if no bond exists.
+    #[hotpath::measure]
     pub fn get_highest_fidelity_index(&self) -> Result<Option<u32>, WalletError> {
         Ok(self
             .store
@@ -385,6 +390,7 @@ impl Wallet {
     /// Calculate the theoretical fidelity bond value.
     /// Bond value calculation is described in the document below.
     /// <https://gist.github.com/chris-belcher/87ebbcbb639686057a389acb9ab3e25b#financial-mathematics-of-joinmarket-fidelity-bonds>
+    #[hotpath::measure]
     pub fn calculate_bond_value(&self, bond: &FidelityBond) -> Result<Amount, WalletError> {
         let current_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -428,6 +434,7 @@ impl Wallet {
     /// Upon confirmation it stores the fidelity information in the wallet data.
     /// Create and broadcast the fidelity bond transaction. Returns `(index, txid)`
     /// so the caller can wait for confirmation without holding the wallet lock.
+    #[hotpath::measure]
     pub fn create_fidelity(
         &mut self,
         amount: Amount,
@@ -478,6 +485,7 @@ impl Wallet {
     }
 
     /// Update the confirmation height and certificate expiry of a fidelity bond after it confirms.
+    #[hotpath::measure]
     pub fn update_fidelity_bond_conf_details(
         &mut self,
         index: u32,
@@ -497,6 +505,7 @@ impl Wallet {
     }
 
     /// Redeems all expired fidelity bonds in the wallet ,if found any.
+    #[hotpath::measure]
     pub fn redeem_expired_fidelity_bonds(
         &mut self,
         destination_address_type: AddressType,

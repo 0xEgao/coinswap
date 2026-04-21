@@ -178,6 +178,7 @@ pub enum MakerProtocol {
 impl MakerProtocol {
     /// Check if this protocol supports the requested protocol.
     /// Makers support both Legacy and Taproot.
+    #[hotpath::measure]
     pub fn supports(&self, requested: &MakerProtocol) -> bool {
         match self {
             MakerProtocol::Unified => true, // Unified supports both
@@ -234,17 +235,20 @@ pub struct OfferBookHandle {
 
 impl OfferBookHandle {
     /// Gets the current snapshot of whole offerbook
+    #[hotpath::measure]
     pub fn snapshot(&self) -> OfferBook {
         self.inner.read().unwrap().clone()
     }
 
     /// Tag a maker as bad
+    #[hotpath::measure]
     pub fn add_bad_maker(&self, maker: &OfferAndAddress) {
         log::info!("Bad Maker added: {}", maker.address);
         self.inner.write().unwrap().mark_bad(&maker.address);
     }
 
     /// All current good makers
+    #[hotpath::measure]
     pub fn active_makers(&self, protocol: &MakerProtocol) -> Vec<OfferAndAddress> {
         #[cfg(not(feature = "integration-test"))]
         {
@@ -279,21 +283,25 @@ impl OfferBookHandle {
     }
 
     /// Fetch all good makers
+    #[hotpath::measure]
     pub fn good_makers(&self) -> Vec<OfferAndAddress> {
         self.inner.read().unwrap().good_makers()
     }
 
     /// All bad makers
+    #[hotpath::measure]
     pub fn get_bad_makers(&self, protocol: &MakerProtocol) -> Vec<OfferAndAddress> {
         self.inner.read().unwrap().get_bad_makers(protocol)
     }
 
     /// Fetch all makers good, bad, and unresponsive
+    #[hotpath::measure]
     pub fn all_makers(&self) -> Vec<MakerOfferCandidate> {
         self.inner.read().unwrap().all_makers()
     }
 
     /// Checks if an address is bad or not
+    #[hotpath::measure]
     pub fn is_bad_maker(&self, offer_and_address: &OfferAndAddress) -> bool {
         let offerbook = self.inner.read().unwrap();
         let value = offerbook
@@ -308,11 +316,13 @@ impl OfferBookHandle {
     }
 
     /// Persist offerbook on disk
+    #[hotpath::measure]
     pub fn persist(&self) -> Result<(), TakerError> {
         self.inner.read().unwrap().write_to_disk(&self.path)
     }
 
     /// Create or load offerbook on disk
+    #[hotpath::measure]
     pub fn load_or_create(data_dir: &Path) -> Result<Self, TakerError> {
         let path = data_dir.join("offerbook.json");
 
@@ -364,6 +374,7 @@ pub struct OfferSyncHandle {
 
 impl OfferSyncHandle {
     /// Shutdown handler
+    #[hotpath::measure]
     pub fn shutdown(&mut self) {
         self.shutdown.store(true, Ordering::Relaxed);
 
@@ -373,6 +384,7 @@ impl OfferSyncHandle {
     }
 
     /// Trigger an offerbook sync and block until it completes.
+    #[hotpath::measure]
     pub fn sync_and_wait(&self) -> Result<(), TakerError> {
         let (done_tx, done_rx) = mpsc::channel();
         self.cmd_tx.send(SyncCommand::SyncNow(done_tx))?;
@@ -383,6 +395,7 @@ impl OfferSyncHandle {
 
 impl OfferSyncService {
     /// Constructor method
+    #[hotpath::measure]
     pub fn new(
         offerbook: OfferBookHandle,
         watch_service: WatchService,
@@ -475,6 +488,7 @@ impl OfferSyncService {
     }
 
     /// Starts the offerbook service
+    #[hotpath::measure]
     pub fn start(self) -> OfferSyncHandle {
         let shutdown = Arc::new(AtomicBool::new(false));
         let shutdown_flag = shutdown.clone();
@@ -640,6 +654,7 @@ impl OfferBook {
     }
 
     /// Gets all offers.
+    #[hotpath::measure]
     pub fn all_makers(&self) -> Vec<MakerOfferCandidate> {
         self.makers.to_vec()
     }
@@ -902,6 +917,7 @@ impl MakerAddress {
 }
 
 /// Format state
+#[hotpath::measure]
 pub fn format_state(state: &MakerState) -> String {
     match state {
         MakerState::Good => "Good".into(),

@@ -37,6 +37,8 @@ zmq = "0.10.0"
 tungstenite = { version = "0.28.0", features = ["native-tls"]}
 nostr = "0.44.2"
 crossbeam-channel = "0.5.15"
+hotpath = "0.15.0"
+ctrlc = "3.4.5"
 
 [dev-dependencies]
 flate2 = {version = "1.0.35"}
@@ -49,6 +51,8 @@ default = []
 # The following feature set is in response to the issue described at https://github.com/rust-lang/rust/issues/45599
 # Only used for running the integration tests
 integration-test = []
+hotpath = ["hotpath/hotpath"]
+hotpath-alloc = ["hotpath/hotpath-alloc"]
 
 [patch.crates-io]
 secp256k1 = { git = "https://github.com/jlest01/rust-secp256k1.git", branch = "musig2-module" }

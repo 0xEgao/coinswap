@@ -25,6 +25,7 @@ use crate::{
 };
 
 /// Handle a Taproot protocol message.
+#[hotpath::measure]
 pub fn handle_taproot_message<M: Maker>(
     maker: &Arc<M>,
     state: &mut ConnectionState,

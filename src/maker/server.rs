@@ -44,6 +44,7 @@ const FIDELITY_BOND_UPDATE_INTERVAL: Duration = Duration::from_secs(30);
 const FIDELITY_BOND_UPDATE_INTERVAL: Duration = Duration::from_secs(600);
 
 /// Start the maker server.
+#[hotpath::measure]
 pub fn start_server(maker: Arc<MakerServer>) -> Result<(), MakerError> {
     log::info!("[{}] Starting maker server", maker.config.network_port);
 
@@ -995,6 +996,7 @@ fn send_message(stream: &TcpStream, message: &MakerToTakerMessage) -> Result<(),
 }
 
 /// Retry with different ports if not availabe
+#[hotpath::measure]
 pub fn bind_port_retry(port: u16) -> Result<(TcpListener, u16), MakerError> {
     let mut current_port = port + 2;
     const MAX_PORT: u16 = 62000;

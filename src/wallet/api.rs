@@ -184,6 +184,7 @@ pub enum UTXOSpendInfo {
 
 impl UTXOSpendInfo {
     /// Estimates Witness Size for different types of UTXOs in the context of Coinswap
+    #[hotpath::measure]
     pub fn estimate_witness_size(&self) -> usize {
         const P2WPKH_WITNESS_SIZE: usize = 107; // 1 + 72 (sig) + 33 (pubkey) + 1 (count)
         const P2TR_WITNESS_SIZE: usize = 65; // 1 + 64 (Schnorr sig)
@@ -236,11 +237,13 @@ pub struct RecoveryOutcome {
 
 impl RecoveryOutcome {
     /// Returns true if no contracts were resolved or discarded.
+    #[hotpath::measure]
     pub fn is_empty(&self) -> bool {
         self.resolved.is_empty() && self.discarded.is_empty()
     }
 
     /// Total number of contracts handled (resolved + discarded).
+    #[hotpath::measure]
     pub fn len(&self) -> usize {
         self.resolved.len() + self.discarded.len()
     }
@@ -266,6 +269,7 @@ impl Wallet {
     ///
     /// The path should include the full path for a wallet file.
     /// If the wallet file doesn't exist it will create a new wallet file.
+    #[hotpath::measure]
     pub fn init(
         path: &Path,
         rpc_config: &RPCConfig,
@@ -319,6 +323,7 @@ impl Wallet {
         })
     }
     /// Get the wallet name
+    #[hotpath::measure]
     pub fn get_name(&self) -> &str {
         &self.store.file_name
     }
@@ -537,11 +542,13 @@ impl Wallet {
     }
 
     /// Gets the count of incoming swap coins.
+    #[hotpath::measure]
     pub fn get_incoming_swapcoins_count(&self) -> usize {
         self.store.incoming_swapcoins.len()
     }
 
     /// Gets the count of outgoing swap coins.
+    #[hotpath::measure]
     pub fn get_outgoing_swapcoins_count(&self) -> usize {
         self.store.outgoing_swapcoins.len()
     }
@@ -597,6 +604,7 @@ impl Wallet {
     }
 
     /// Attempt to recover timelocked outgoing swapcoins.
+    #[hotpath::measure]
     pub fn recover_timelocked_swapcoins(
         &mut self,
         fee_rate: f64,
@@ -935,6 +943,7 @@ impl Wallet {
     /// Calculates the total balances of different categories in the wallet.
     /// Includes regular, swap, contract, fidelity, and spendable (regular + swap) utxos.
     /// Optionally takes in a list of UTXOs to reduce rpc call. If None is provided, the full list is fetched from core rpc.
+    #[hotpath::measure]
     pub fn get_balances(&self) -> Result<Balances, WalletError> {
         let regular = self
             .list_descriptor_utxo_spend_info()
@@ -1104,6 +1113,7 @@ impl Wallet {
     }
 
     /// Gets the external index from the wallet.
+    #[hotpath::measure]
     pub fn get_external_index(&self) -> &u32 {
         &self.store.external_index
     }
@@ -1116,6 +1126,7 @@ impl Wallet {
     }
 
     /// Locks the fidelity and live_contract utxos which are not considered for spending from the wallet.
+    #[hotpath::measure]
     pub fn lock_unspendable_utxos(&self) -> Result<(), WalletError> {
         self.rpc.unlock_unspent_all()?;
 
@@ -1309,6 +1320,7 @@ impl Wallet {
     }
 
     /// Returns a list of all UTXOs tracked by the wallet. Including fidelity, live_contracts and swap coins.
+    #[hotpath::measure]
     pub fn list_all_utxo(&self) -> Vec<ListUnspentResultEntry> {
         self.list_all_utxo_spend_info()
             .iter()
@@ -1319,6 +1331,7 @@ impl Wallet {
     /// Returns a list all utxos with their spend info tracked by the wallet.
     /// Optionally takes in an Utxo list to reduce RPC calls. If None is given, the
     /// full list of utxo is fetched from core rpc.
+    #[hotpath::measure]
     pub fn list_all_utxo_spend_info(&self) -> Vec<(ListUnspentResultEntry, UTXOSpendInfo)> {
         let processed_utxos = self
             .store
@@ -1330,6 +1343,7 @@ impl Wallet {
     }
 
     /// Lists live contract UTXOs along with their Spend info.
+    #[hotpath::measure]
     pub fn list_live_contract_spend_info(&self) -> Vec<(ListUnspentResultEntry, UTXOSpendInfo)> {
         let all_valid_utxo = self.list_all_utxo_spend_info();
         let filtered_utxos: Vec<_> = all_valid_utxo
@@ -1344,6 +1358,7 @@ impl Wallet {
     }
 
     /// Lists live timelock contract UTXOs along with their Spend info.
+    #[hotpath::measure]
     pub fn list_live_timelock_contract_spend_info(
         &self,
     ) -> Vec<(ListUnspentResultEntry, UTXOSpendInfo)> {
@@ -1356,6 +1371,7 @@ impl Wallet {
         filtered_utxos
     }
     /// Lists all live hashlock contract UTXOs along with their Spend info.
+    #[hotpath::measure]
     pub fn list_live_hashlock_contract_spend_info(
         &self,
     ) -> Vec<(ListUnspentResultEntry, UTXOSpendInfo)> {
@@ -1369,6 +1385,7 @@ impl Wallet {
     }
 
     /// Lists fidelity UTXOs along with their Spend info.
+    #[hotpath::measure]
     pub fn list_fidelity_spend_info(&self) -> Vec<(ListUnspentResultEntry, UTXOSpendInfo)> {
         let all_valid_utxo = self.list_all_utxo_spend_info();
         let filtered_utxos: Vec<_> = all_valid_utxo
@@ -1380,6 +1397,7 @@ impl Wallet {
     }
 
     /// Lists descriptor UTXOs along with their Spend info.
+    #[hotpath::measure]
     pub fn list_descriptor_utxo_spend_info(&self) -> Vec<(ListUnspentResultEntry, UTXOSpendInfo)> {
         let all_valid_utxo = self.list_all_utxo_spend_info();
         let filtered_utxos: Vec<_> = all_valid_utxo
@@ -1391,6 +1409,7 @@ impl Wallet {
     }
 
     /// Lists swap coin UTXOs along with their Spend info.
+    #[hotpath::measure]
     pub fn list_swap_coin_utxo_spend_info(&self) -> Vec<(ListUnspentResultEntry, UTXOSpendInfo)> {
         let all_valid_utxo = self.list_all_utxo_spend_info();
         let filtered_utxos: Vec<_> = all_valid_utxo
@@ -1407,6 +1426,7 @@ impl Wallet {
     }
 
     /// Lists all incoming swapcoin UTXOs along with their Spend info.
+    #[hotpath::measure]
     pub fn list_incoming_swap_coin_utxo_spend_info(
         &self,
     ) -> Vec<(ListUnspentResultEntry, UTXOSpendInfo)> {
@@ -1419,6 +1439,7 @@ impl Wallet {
         filtered_utxos
     }
     /// Lists all swept incoming swapcoin UTXOs along with their Spend info.
+    #[hotpath::measure]
     pub fn list_swept_incoming_swap_utxos(&self) -> Vec<(ListUnspentResultEntry, UTXOSpendInfo)> {
         let all_valid_utxo = self.list_all_utxo_spend_info();
         let filtered_utxos: Vec<_> = all_valid_utxo
@@ -1491,6 +1512,7 @@ impl Wallet {
     }
 
     /// Gets the next external address from the HD keychain. Saves the wallet to disk
+    #[hotpath::measure]
     pub fn get_next_external_address(
         &mut self,
         address_type: AddressType,
@@ -1510,6 +1532,7 @@ impl Wallet {
     }
 
     /// Gets the next internal addresses from the HD keychain.
+    #[hotpath::measure]
     pub fn get_next_internal_addresses(
         &self,
         count: u32,
@@ -1854,6 +1877,7 @@ impl Wallet {
     /// - Fidelity bond UTXOs
     /// - Locked UTXOs
     /// - Unconfirmed UTXOs
+    #[hotpath::measure]
     pub fn coin_select(
         &self,
         amount: Amount,
@@ -2357,10 +2381,12 @@ impl Wallet {
     }
 
     /// Uses internal RPC client to broadcast a transaction
+    #[hotpath::measure]
     pub fn send_tx(&self, tx: &Transaction) -> Result<Txid, WalletError> {
         Ok(self.rpc.send_raw_transaction(tx)?)
     }
     /// Sweeps all completed incoming swap coins.
+    #[hotpath::measure]
     pub fn sweep_incoming_swapcoins(
         &mut self,
         feerate: f64,
@@ -2621,6 +2647,7 @@ impl Wallet {
     ///
     /// If a `shutdown` flag is provided, the wait is interrupted when it becomes `true`,
     /// returning `WalletError::General` instead of blocking indefinitely.
+    #[hotpath::measure]
     pub fn wait_for_tx_confirmation(
         &self,
         txid: Txid,

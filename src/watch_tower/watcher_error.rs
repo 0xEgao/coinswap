@@ -112,6 +112,7 @@ impl<'a, T> From<PoisonError<MutexGuard<'a, T>>> for WatcherError {
 
 impl WatcherError {
     /// Returns the underlying `ErrorKind` if the error wraps an I/O failure.
+    #[hotpath::measure]
     pub fn io_error_kind(&self) -> Option<std::io::ErrorKind> {
         match self {
             WatcherError::IOError(e) => Some(e.kind()),
@@ -120,6 +121,7 @@ impl WatcherError {
     }
 
     /// Returns a stable string identifier for the error variant.
+    #[hotpath::measure]
     pub fn kind(&self) -> &'static str {
         match self {
             WatcherError::ServerError => "ServerError",

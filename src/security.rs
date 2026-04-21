@@ -138,6 +138,7 @@ pub struct KeyMaterial {
 }
 impl KeyMaterial {
     /// Creates new key material from a password, with a freshly random generated nonce and salt.
+    #[hotpath::measure]
     pub fn new_from_password(enc_password: Option<String>) -> Option<Self> {
         enc_password.map(|pwd| {
             let pbkdf2_salt = random::<PBKDF2Salt>();
@@ -156,6 +157,7 @@ impl KeyMaterial {
     ///
     /// If the user enters an empty string, returns `None`, indicating no encryption.
     /// Otherwise, returns `Some(KeyMaterial)` with a newly generated nonce and salt.
+    #[hotpath::measure]
     pub fn new_interactive(prompt: Option<String>) -> Option<Self> {
         let enc_password =
             utill::prompt_password(prompt.unwrap_or(
@@ -183,6 +185,7 @@ impl KeyMaterial {
     ///
     /// This is used when decrypting existing wallet data, where the nonce
     /// and the salt have already been read from disk and are available.
+    #[hotpath::measure]
     pub fn existing(password: String, nonce: EncryptionNonce, pbkdf2_salt: PBKDF2Salt) -> Self {
         KeyMaterial {
             key: pbkdf2_hmac_array::<Sha256, 32>(
@@ -230,6 +233,7 @@ pub struct EncryptedData {
 ///
 /// The resulting `EncryptedData` can be serialized and stored to disk. To decrypt it later,
 /// use [`decrypt_struct`].
+#[hotpath::measure]
 pub fn encrypt_struct<T: Serialize>(
     plain_struct: T,
     enc_material: &KeyMaterial,
@@ -264,6 +268,7 @@ pub fn encrypt_struct<T: Serialize>(
 ///
 /// It uses the AES-256-GCM key and nonce in [`KeyMaterial`] to decrypt the
 /// encrypted CBOR payload, then deserializes it into the original struct.
+#[hotpath::measure]
 pub fn decrypt_struct<T: DeserializeOwned>(
     encrypted_struct: EncryptedData,
     enc_material: &KeyMaterial,
@@ -299,6 +304,7 @@ pub fn decrypt_struct<T: DeserializeOwned>(
 /// # Type Parameters
 /// - `T`: The struct type to load.
 /// - `F`: A type implementing [`SerdeFormat`] (`SerdeCbor` or `SerdeJson`).
+#[hotpath::measure]
 pub fn load_sensitive_struct<T: DeserializeOwned, F: SerdeFormat>(
     file: &Path,
     password: Option<String>,

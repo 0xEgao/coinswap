@@ -24,6 +24,7 @@ use super::WalletError;
 mod option_scalar_serde {
     use super::*;
 
+    #[hotpath::measure]
     pub fn serialize<S>(scalar: &Option<Scalar>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -34,6 +35,7 @@ mod option_scalar_serde {
         }
     }
 
+    #[hotpath::measure]
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Scalar>, D::Error>
     where
         D: Deserializer<'de>,
@@ -98,6 +100,7 @@ pub struct IncomingSwapCoin {
 }
 
 impl IncomingSwapCoin {
+    #[hotpath::measure]
     pub fn new_legacy(
         my_privkey: SecretKey,
         other_pubkey: PublicKey,
@@ -139,6 +142,7 @@ impl IncomingSwapCoin {
     }
 
     /// Create a new Taproot (MuSig2) incoming swap coin.
+    #[hotpath::measure]
     pub fn new_taproot(
         hashlock_privkey: SecretKey,
         hashlock_script: ScriptBuf,
@@ -170,6 +174,7 @@ impl IncomingSwapCoin {
     }
 
     /// Returns our private key.
+    #[hotpath::measure]
     pub fn privkey(&self) -> Result<SecretKey, WalletError> {
         self.my_privkey.ok_or_else(|| {
             WalletError::General("Incoming swapcoin's privkey does not exist".to_string())
@@ -177,6 +182,7 @@ impl IncomingSwapCoin {
     }
 
     /// Returns our public key.
+    #[hotpath::measure]
     pub fn pubkey(&self) -> Result<PublicKey, WalletError> {
         self.my_pubkey.ok_or_else(|| {
             WalletError::General("Incoming swapcoin's pubkey does not exist".to_string())
@@ -184,6 +190,7 @@ impl IncomingSwapCoin {
     }
 
     /// Returns the counterparty's public key.
+    #[hotpath::measure]
     pub fn other_pubkey(&self) -> Result<PublicKey, WalletError> {
         self.other_pubkey.ok_or_else(|| {
             WalletError::General("Incoming swapcoin's other pubkey does not exist".to_string())
@@ -191,6 +198,7 @@ impl IncomingSwapCoin {
     }
 
     /// Returns the contract txid.
+    #[hotpath::measure]
     pub fn contract_txid(&self) -> Result<Txid, WalletError> {
         self.contract_txid
             .or_else(|| Some(self.contract_tx.compute_txid()))
@@ -200,21 +208,25 @@ impl IncomingSwapCoin {
     }
 
     /// Returns the hashlock script (Taproot).
+    #[hotpath::measure]
     pub fn hashlock_script(&self) -> Option<&ScriptBuf> {
         self.hashlock_script.as_ref()
     }
 
     /// Returns the timelock script (Taproot).
+    #[hotpath::measure]
     pub fn timelock_script(&self) -> Option<&ScriptBuf> {
         self.timelock_script.as_ref()
     }
 
     /// Returns the contract redeemscript (Legacy).
+    #[hotpath::measure]
     pub fn contract_redeemscript(&self) -> Option<&ScriptBuf> {
         self.contract_redeemscript.as_ref()
     }
 
     /// Returns the tap tweak (Taproot).
+    #[hotpath::measure]
     pub fn tap_tweak(&self) -> Result<Scalar, WalletError> {
         self.tap_tweak.ok_or_else(|| {
             WalletError::General("Incoming swapcoin's tap tweak does not exist".to_string())
@@ -222,6 +234,7 @@ impl IncomingSwapCoin {
     }
 
     /// Returns the internal key (Taproot).
+    #[hotpath::measure]
     pub fn internal_key(&self) -> Result<XOnlyPublicKey, WalletError> {
         self.internal_key.ok_or_else(|| {
             WalletError::General("Incoming swapcoin's internal key does not exist".to_string())
@@ -229,21 +242,25 @@ impl IncomingSwapCoin {
     }
 
     /// Returns whether the preimage is known.
+    #[hotpath::measure]
     pub fn is_preimage_known(&self) -> bool {
         self.hash_preimage.is_some()
     }
 
     /// Sets the preimage.
+    #[hotpath::measure]
     pub fn set_preimage(&mut self, preimage: [u8; 32]) {
         self.hash_preimage = Some(preimage);
     }
 
     /// Sets the other party's private key.
+    #[hotpath::measure]
     pub fn set_other_privkey(&mut self, privkey: SecretKey) {
         self.other_privkey = Some(privkey);
     }
 
     /// Sets the Taproot parameters.
+    #[hotpath::measure]
     pub fn set_taproot_params(
         &mut self,
         my_privkey: SecretKey,
@@ -263,6 +280,7 @@ impl IncomingSwapCoin {
     ///
     /// For Legacy, the contract tx spends the P2WSH multisig funding output.
     /// It needs both our signature and the maker's signature applied to the witness.
+    #[hotpath::measure]
     pub fn create_signed_contract_tx(&self) -> Result<Transaction, WalletError> {
         let mut signed_tx = self.contract_tx.clone();
 
@@ -318,6 +336,7 @@ impl IncomingSwapCoin {
     }
 
     /// Creates and signs a spend transaction for this incoming swap coin.
+    #[hotpath::measure]
     pub fn sign_spend_transaction(
         &self,
         input_value: Amount,
@@ -524,6 +543,7 @@ impl IncomingSwapCoin {
     }
 
     /// Get the vout of the contract output in the contract_tx.
+    #[hotpath::measure]
     pub fn get_contract_output_vout(&self) -> u32 {
         if self.protocol == ProtocolVersion::Taproot && self.contract_tx.output.len() > 1 {
             for (i, output) in self.contract_tx.output.iter().enumerate() {
@@ -786,6 +806,7 @@ pub struct OutgoingSwapCoin {
 
 impl OutgoingSwapCoin {
     /// Create a new Legacy (ECDSA) outgoing swap coin.
+    #[hotpath::measure]
     pub fn new_legacy(
         my_privkey: SecretKey,
         other_pubkey: PublicKey,
@@ -822,6 +843,7 @@ impl OutgoingSwapCoin {
     }
 
     /// Create a new Taproot (MuSig2) outgoing swap coin.
+    #[hotpath::measure]
     pub fn new_taproot(
         timelock_privkey: SecretKey,
         hashlock_script: ScriptBuf,
@@ -851,6 +873,7 @@ impl OutgoingSwapCoin {
     }
 
     /// Returns our private key.
+    #[hotpath::measure]
     pub fn privkey(&self) -> Result<SecretKey, WalletError> {
         self.my_privkey.ok_or_else(|| {
             WalletError::General("Outgoing swapcoin's privkey does not exist".to_string())
@@ -858,6 +881,7 @@ impl OutgoingSwapCoin {
     }
 
     /// Returns our public key.
+    #[hotpath::measure]
     pub fn pubkey(&self) -> Result<PublicKey, WalletError> {
         self.my_pubkey.ok_or_else(|| {
             WalletError::General("Outgoing swapcoin's pubkey does not exist".to_string())
@@ -865,6 +889,7 @@ impl OutgoingSwapCoin {
     }
 
     /// Returns the counterparty's public key.
+    #[hotpath::measure]
     pub fn other_pubkey(&self) -> Result<PublicKey, WalletError> {
         self.other_pubkey.ok_or_else(|| {
             WalletError::General("Outgoing swapcoin's other pubkey does not exist".to_string())
@@ -872,21 +897,25 @@ impl OutgoingSwapCoin {
     }
 
     /// Returns the hashlock script (Taproot).
+    #[hotpath::measure]
     pub fn hashlock_script(&self) -> Option<&ScriptBuf> {
         self.hashlock_script.as_ref()
     }
 
     /// Returns the timelock script (Taproot).
+    #[hotpath::measure]
     pub fn timelock_script(&self) -> Option<&ScriptBuf> {
         self.timelock_script.as_ref()
     }
 
     /// Returns the contract redeemscript (Legacy).
+    #[hotpath::measure]
     pub fn contract_redeemscript(&self) -> Option<&ScriptBuf> {
         self.contract_redeemscript.as_ref()
     }
 
     /// Returns the tap tweak (Taproot).
+    #[hotpath::measure]
     pub fn tap_tweak(&self) -> Result<Scalar, WalletError> {
         self.tap_tweak.ok_or_else(|| {
             WalletError::General("Outgoing swapcoin's tap tweak does not exist".to_string())
@@ -894,6 +923,7 @@ impl OutgoingSwapCoin {
     }
 
     /// Returns the internal key (Taproot).
+    #[hotpath::measure]
     pub fn internal_key(&self) -> Result<XOnlyPublicKey, WalletError> {
         self.internal_key.ok_or_else(|| {
             WalletError::General("Outgoing swapcoin's internal key does not exist".to_string())
@@ -901,16 +931,19 @@ impl OutgoingSwapCoin {
     }
 
     /// Sets the preimage.
+    #[hotpath::measure]
     pub fn set_preimage(&mut self, preimage: [u8; 32]) {
         self.hash_preimage = Some(preimage);
     }
 
     /// Sets the other party's private key.
+    #[hotpath::measure]
     pub fn set_other_privkey(&mut self, privkey: SecretKey) {
         self.other_privkey = Some(privkey);
     }
 
     /// Sets the Taproot parameters.
+    #[hotpath::measure]
     pub fn set_taproot_params(
         &mut self,
         my_privkey: SecretKey,
@@ -927,6 +960,7 @@ impl OutgoingSwapCoin {
     }
 
     /// Extracts the timelock value from the script.
+    #[hotpath::measure]
     pub fn get_timelock(&self) -> Option<u32> {
         if self.protocol == ProtocolVersion::Taproot {
             // Parse timelock from Taproot timelock script
@@ -965,6 +999,7 @@ impl OutgoingSwapCoin {
     /// For Taproot, the contract_tx may have multiple outputs (funding + change).
     /// Find the correct output by matching `funding_amount`.
     /// For Legacy (single-output contract tx), returns 0.
+    #[hotpath::measure]
     pub fn get_contract_output_vout(&self) -> u32 {
         if self.protocol == ProtocolVersion::Taproot && self.contract_tx.output.len() > 1 {
             for (i, output) in self.contract_tx.output.iter().enumerate() {
@@ -981,6 +1016,7 @@ impl OutgoingSwapCoin {
     /// For Legacy, the contract tx spends the P2WSH multisig funding output.
     /// It needs both our signature and the maker's signature applied to the witness.
     /// For Taproot, the contract tx is already self-contained (no multisig witness needed).
+    #[hotpath::measure]
     pub fn create_signed_contract_tx(&self) -> Result<Transaction, WalletError> {
         let mut signed_tx = self.contract_tx.clone();
 
@@ -1040,6 +1076,7 @@ impl OutgoingSwapCoin {
     ///
     /// This signs a transaction that spends the contract output via the timelock path,
     /// allowing recovery of funds after the timelock has expired.
+    #[hotpath::measure]
     pub fn sign_timelock_recovery(&self, mut tx: Transaction) -> Result<Transaction, WalletError> {
         use bitcoin::{
             secp256k1::Secp256k1,
@@ -1194,11 +1231,13 @@ pub struct WatchOnlySwapCoin {
 impl WatchOnlySwapCoin {
     /// Returns the contract transaction ID.
     #[allow(dead_code)]
+    #[hotpath::measure]
     pub fn contract_txid(&self) -> Txid {
         self.contract_tx.compute_txid()
     }
 
     /// Create a new Legacy watch-only swap coin.
+    #[hotpath::measure]
     pub fn new_legacy(
         sender_pubkey: PublicKey,
         receiver_pubkey: PublicKey,
@@ -1219,6 +1258,7 @@ impl WatchOnlySwapCoin {
     }
 
     /// Create a new Taproot watch-only swap coin.
+    #[hotpath::measure]
     pub fn new_taproot(
         sender_pubkey: PublicKey,
         receiver_pubkey: PublicKey,

@@ -39,11 +39,13 @@ pub struct WatchService {
 
 impl WatchService {
     /// Creates a new service from the given command sender and event receiver.
+    #[hotpath::measure]
     pub fn new(tx: StdSender<WatcherCommand>, rx: CbReceiver<WatcherEvent>) -> Self {
         Self { tx, rx }
     }
 
     /// Registers an outpoint to be monitored for future spends.
+    #[hotpath::measure]
     pub fn register_watch_request(&self, outpoint: OutPoint) {
         let _ = self
             .tx
@@ -51,38 +53,45 @@ impl WatchService {
     }
 
     /// Queries whether a previously registered outpoint has been spent.
+    #[hotpath::measure]
     pub fn watch_request(&self, outpoint: OutPoint) {
         let _ = self.tx.send(WatcherCommand::WatchRequest { outpoint });
     }
 
     /// Stops monitoring an outpoint by removing its watch entry from the registry.
+    #[hotpath::measure]
     pub fn unwatch(&self, outpoint: OutPoint) {
         let _ = self.tx.send(WatcherCommand::Unwatch { outpoint });
     }
 
     /// Attempts a non-blocking receive; returns `None` if no event is pending.
+    #[hotpath::measure]
     pub fn poll_event(&self) -> Option<WatcherEvent> {
         self.rx.try_recv().ok()
     }
 
     /// Blocks until the next watcher event arrives.
+    #[hotpath::measure]
     pub fn wait_for_event(&self) -> Option<WatcherEvent> {
         self.rx.recv().ok()
     }
 
     /// Requests the list of maker addresses.
+    #[hotpath::measure]
     pub fn request_maker_address(&self) -> Option<WatcherEvent> {
         _ = self.tx.send(WatcherCommand::MakerAddress);
         self.rx.recv().ok()
     }
 
     /// Signals the watcher to shut down gracefully.
+    #[hotpath::measure]
     pub fn shutdown(&self) {
         let _ = self.tx.send(WatcherCommand::Shutdown);
     }
 }
 
 /// Starts the Maker Watch Service
+#[hotpath::measure]
 pub fn start_maker_watch_service(
     zmq_addr: &str,
     rpc_config: &RPCConfig,

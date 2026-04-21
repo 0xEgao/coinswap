@@ -1,0 +1,372 @@
+{
+  "type": "hotpath_report",
+  "functions_timing": {
+    "profiling_mode": "timing",
+    "time_elapsed": "1522.87 s",
+    "total_elapsed_ns": 1522872618000,
+    "description": "Function execution time metrics.",
+    "caller_name": "taker",
+    "percentiles": [
+      95.0
+    ],
+    "data": [
+      {
+        "id": 103,
+        "name": "taker",
+        "calls": 1,
+        "avg": "1523.10 s",
+        "p95": "1523.64 s",
+        "total": "1522.87 s",
+        "percent_total": "100.00%"
+      },
+      {
+        "id": 101,
+        "name": "coinswap::watch_tower::watcher::run",
+        "calls": 1,
+        "avg": "1523.10 s",
+        "p95": "1523.64 s",
+        "total": "1522.86 s",
+        "percent_total": "100.00%"
+      },
+      {
+        "id": 12,
+        "name": "coinswap::watch_tower::zmq_backend::poll",
+        "calls": 155728231,
+        "avg": "9.43 µs",
+        "p95": "15.21 µs",
+        "total": "1468.66 s",
+        "percent_total": "96.44%"
+      },
+      {
+        "id": 98,
+        "name": "coinswap::taker::api::start_coinswap",
+        "calls": 1,
+        "avg": "1280.44 s",
+        "p95": "1280.97 s",
+        "total": "1280.77 s",
+        "percent_total": "84.10%"
+      },
+      {
+        "id": 32,
+        "name": "coinswap::wallet::api::sweep_incoming_swapcoins",
+        "calls": 16,
+        "avg": "43.81 s",
+        "p95": "701.15 s",
+        "total": "700.65 s",
+        "percent_total": "46.01%"
+      },
+      {
+        "id": 63,
+        "name": "coinswap::taker::api::prepare_coinswap",
+        "calls": 1,
+        "avg": "118.35 s",
+        "p95": "118.38 s",
+        "total": "118.32 s",
+        "percent_total": "7.77%"
+      },
+      {
+        "id": 94,
+        "name": "coinswap::wallet::api::wait_for_tx_confirmation",
+        "calls": 1,
+        "avg": "100.03 s",
+        "p95": "100.06 s",
+        "total": "100.04 s",
+        "percent_total": "6.57%"
+      },
+      {
+        "id": 58,
+        "name": "coinswap::taker::offers::sync_and_wait",
+        "calls": 1,
+        "avg": "88.89 s",
+        "p95": "88.92 s",
+        "total": "88.88 s",
+        "percent_total": "5.84%"
+      },
+      {
+        "id": 52,
+        "name": "coinswap::utill::interactive_select",
+        "calls": 1,
+        "avg": "58.74 s",
+        "p95": "58.75 s",
+        "total": "58.72 s",
+        "percent_total": "3.86%"
+      },
+      {
+        "id": 62,
+        "name": "coinswap::utill::read_message",
+        "calls": 11,
+        "avg": "1.23 s",
+        "p95": "1.46 s",
+        "total": "13.56 s",
+        "percent_total": "0.89%"
+      },
+      {
+        "id": 51,
+        "name": "coinswap::wallet::rpc::sync_and_save",
+        "calls": 17,
+        "avg": "534.10 ms",
+        "p95": "554.17 ms",
+        "total": "9.08 s",
+        "percent_total": "0.60%"
+      },
+      {
+        "id": 100,
+        "name": "coinswap::taker::offers::shutdown",
+        "calls": 1,
+        "avg": "840.17 ms",
+        "p95": "840.43 ms",
+        "total": "840.20 ms",
+        "percent_total": "0.06%"
+      },
+      {
+        "id": 37,
+        "name": "coinswap::wallet::api::send_tx",
+        "calls": 5,
+        "avg": "3.52 ms",
+        "p95": "8.72 ms",
+        "total": "17.60 ms",
+        "percent_total": "0.00%"
+      },
+      {
+        "id": 38,
+        "name": "coinswap::wallet::api::recover_timelocked_swapcoins",
+        "calls": 15,
+        "avg": "794.05 µs",
+        "p95": "2.38 ms",
+        "total": "11.91 ms",
+        "percent_total": "0.00%"
+      },
+      {
+        "id": 74,
+        "name": "coinswap::wallet::funding::create_funding_txes",
+        "calls": 1,
+        "avg": "11.21 ms",
+        "p95": "11.21 ms",
+        "total": "11.21 ms",
+        "percent_total": "0.00%"
+      }
+    ]
+  },
+  "functions_alloc": {
+    "profiling_mode": "alloc-bytes",
+    "time_elapsed": "1522.87 s",
+    "total_elapsed_ns": 1522872618000,
+    "total_allocated": "4.5 MB",
+    "description": "Exclusive allocation bytes by each function (excluding nested calls).",
+    "caller_name": "taker",
+    "percentiles": [
+      95.0
+    ],
+    "data": [
+      {
+        "id": 51,
+        "name": "coinswap::wallet::rpc::sync_and_save",
+        "calls": 17,
+        "avg": "108.6 KB",
+        "p95": "117.1 KB",
+        "total": "1.8 MB",
+        "percent_total": "39.88%"
+      },
+      {
+        "id": 98,
+        "name": "coinswap::taker::api::start_coinswap",
+        "calls": 1,
+        "avg": "1.4 MB",
+        "p95": "1.4 MB",
+        "total": "1.4 MB",
+        "percent_total": "30.29%"
+      },
+      {
+        "id": 38,
+        "name": "coinswap::wallet::api::recover_timelocked_swapcoins",
+        "calls": 15,
+        "avg": "14.4 KB",
+        "p95": "18.3 KB",
+        "total": "216.5 KB",
+        "percent_total": "4.68%"
+      },
+      {
+        "id": 41,
+        "name": "coinswap::wallet::api::list_all_utxo_spend_info",
+        "calls": 116,
+        "avg": "1.5 KB",
+        "p95": "1.6 KB",
+        "total": "175.0 KB",
+        "percent_total": "3.78%"
+      },
+      {
+        "id": 32,
+        "name": "coinswap::wallet::api::sweep_incoming_swapcoins",
+        "calls": 16,
+        "avg": "7.8 KB",
+        "p95": "122.7 KB",
+        "total": "124.6 KB",
+        "percent_total": "2.69%"
+      },
+      {
+        "id": 29,
+        "name": "coinswap::taker::swap_tracker::save_record",
+        "calls": 12,
+        "avg": "8.2 KB",
+        "p95": "11.1 KB",
+        "total": "98.2 KB",
+        "percent_total": "2.12%"
+      },
+      {
+        "id": 103,
+        "name": "taker",
+        "calls": 1,
+        "avg": "94.8 KB",
+        "p95": "94.8 KB",
+        "total": "94.8 KB",
+        "percent_total": "2.05%"
+      },
+      {
+        "id": 61,
+        "name": "coinswap::utill::send_message",
+        "calls": 11,
+        "avg": "8.4 KB",
+        "p95": "11.5 KB",
+        "total": "92.8 KB",
+        "percent_total": "2.00%"
+      },
+      {
+        "id": 62,
+        "name": "coinswap::utill::read_message",
+        "calls": 11,
+        "avg": "8.2 KB",
+        "p95": "8.9 KB",
+        "total": "90.7 KB",
+        "percent_total": "1.96%"
+      },
+      {
+        "id": 44,
+        "name": "coinswap::wallet::api::list_descriptor_utxo_spend_info",
+        "calls": 39,
+        "avg": "1.3 KB",
+        "p95": "1.3 KB",
+        "total": "52.6 KB",
+        "percent_total": "1.13%"
+      },
+      {
+        "id": 94,
+        "name": "coinswap::wallet::api::wait_for_tx_confirmation",
+        "calls": 1,
+        "avg": "50.9 KB",
+        "p95": "50.9 KB",
+        "total": "50.9 KB",
+        "percent_total": "1.10%"
+      },
+      {
+        "id": 52,
+        "name": "coinswap::utill::interactive_select",
+        "calls": 1,
+        "avg": "40.2 KB",
+        "p95": "40.2 KB",
+        "total": "40.2 KB",
+        "percent_total": "0.87%"
+      },
+      {
+        "id": 39,
+        "name": "coinswap::taker::api::init",
+        "calls": 1,
+        "avg": "38.2 KB",
+        "p95": "38.2 KB",
+        "total": "38.2 KB",
+        "percent_total": "0.83%"
+      },
+      {
+        "id": 37,
+        "name": "coinswap::wallet::api::send_tx",
+        "calls": 5,
+        "avg": "7.0 KB",
+        "p95": "8.2 KB",
+        "total": "35.0 KB",
+        "percent_total": "0.75%"
+      },
+      {
+        "id": 43,
+        "name": "coinswap::watch_tower::registry_storage::save_nostr_cursor",
+        "calls": 10,
+        "avg": "3.4 KB",
+        "p95": "4.0 KB",
+        "total": "34.1 KB",
+        "percent_total": "0.74%"
+      }
+    ]
+  },
+  "threads": {
+    "current_elapsed_ns": 1522883412000,
+    "sample_interval_ms": 250,
+    "thread_count": 11,
+    "rss_bytes": "76.8 MB",
+    "total_alloc_bytes": "3.5 MB",
+    "total_dealloc_bytes": "3.5 MB",
+    "alloc_dealloc_diff": "13.0 KB",
+    "data": [
+      {
+        "os_tid": 259,
+        "name": "main",
+        "status": "Sleeping",
+        "status_code": "3",
+        "cpu_percent": "0.0%",
+        "cpu_percent_max": "6.1%",
+        "cpu_percent_avg": "0.0%",
+        "alloc_bytes": "2.4 MB",
+        "dealloc_bytes": "2.4 MB",
+        "mem_diff": "45.5 KB"
+      },
+      {
+        "os_tid": 9731,
+        "name": "nostr-session-wss://nos.lol",
+        "status": "Sleeping",
+        "status_code": "3",
+        "cpu_percent": "0.0%",
+        "cpu_percent_max": "0.3%",
+        "cpu_percent_avg": "0.0%",
+        "alloc_bytes": "772.1 KB",
+        "dealloc_bytes": "674.8 KB",
+        "mem_diff": "97.3 KB"
+      },
+      {
+        "os_tid": 9475,
+        "name": "nostr-session-wss://relay.damus.io",
+        "status": "Sleeping",
+        "status_code": "3",
+        "cpu_percent": "0.0%",
+        "cpu_percent_max": "0.2%",
+        "cpu_percent_avg": "0.0%",
+        "alloc_bytes": "173.1 KB",
+        "dealloc_bytes": "59.3 KB",
+        "mem_diff": "113.8 KB"
+      },
+      {
+        "os_tid": 4359,
+        "name": "Watcher thread",
+        "status": "Running ",
+        "status_code": "1",
+        "cpu_percent": "29.3%",
+        "cpu_percent_max": "31.1%",
+        "cpu_percent_avg": "29.1%",
+        "alloc_bytes": "74.6 KB",
+        "dealloc_bytes": "244.0 KB",
+        "mem_diff": "-169.4 KB"
+      },
+      {
+        "os_tid": 10499,
+        "name": "offer-sync-service",
+        "status": "Sleeping",
+        "status_code": "3",
+        "cpu_percent": "0.0%",
+        "cpu_percent_max": "0.5%",
+        "cpu_percent_avg": "0.0%",
+        "alloc_bytes": "39.3 KB",
+        "dealloc_bytes": "113.5 KB",
+        "mem_diff": "-74.2 KB"
+      }
+    ]
+  },
+  "cpu_baseline": {
+    "avg": "397.90 µs"
+  }
+}

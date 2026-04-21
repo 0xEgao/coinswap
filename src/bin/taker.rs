@@ -12,8 +12,9 @@ use coinswap::{
 };
 use log::LevelFilter;
 use serde_json::{json, to_string_pretty};
-use std::{path::PathBuf, str::FromStr};
+use std::{path::PathBuf, process::ExitCode, str::FromStr};
 
+use coinswap::hotpath_cli::HotpathCliGuard;
 /// A simple command line app to operate as coinswap client.
 ///
 /// The app works as a regular Bitcoin wallet with the added capability to perform coinswaps. The app
@@ -117,7 +118,7 @@ enum Commands {
         #[clap(long, short = 'a', default_value = "20000")]
         amount: u64,
         /// Protocol version to use: "legacy" or "taproot"
-        #[clap(long, default_value = "legacy")]
+        #[clap(long, default_value = "taproot")]
         protocol: String,
         /// Manually specify maker addresses (host:port). Can be repeated.
         /// When set, these makers are used directly instead of auto-discovery.
@@ -233,8 +234,27 @@ fn display_offer(wallet: &Wallet, candidate: &MakerOfferCandidate) -> Result<Str
     ))
 }
 
-fn main() -> Result<(), TakerError> {
-    let args = Cli::parse();
+fn main() -> ExitCode {
+    let _hotpath_guard = HotpathCliGuard::start("taker");
+
+    let args = match Cli::try_parse() {
+        Ok(args) => args,
+        Err(e) => {
+            let code = e.exit_code();
+            let _ = e.print();
+            return ExitCode::from(code.clamp(0, 255) as u8);
+        }
+    };
+
+    if let Err(e) = run(args) {
+        eprintln!("{e:?}");
+        return ExitCode::FAILURE;
+    }
+
+    ExitCode::SUCCESS
+}
+
+fn run(args: Cli) -> Result<(), TakerError> {
     setup_taker_logger(
         LevelFilter::from_str(&args.verbosity).unwrap(),
         matches!(

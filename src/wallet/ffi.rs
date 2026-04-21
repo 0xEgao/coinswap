@@ -36,6 +36,7 @@ pub use super::report::{MakerFeeInfo, SwapReport, SwapRole, SwapStatus};
 /// - `wallet_file_name`: Restored wallet filename, defaults to name from backup if empty
 /// - `backup_file_path`: Path to the JSON file containing the wallet backup (encrypted or plain)
 /// - `password`: Required if backup is encrypted, ignored otherwise
+#[hotpath::measure]
 pub fn restore_wallet_gui_app(
     data_dir: Option<PathBuf>,
     wallet_file_name: Option<String>,
@@ -92,6 +93,7 @@ impl Wallet {
     ///
     /// // Unencrypted backup
     /// wallet.backup_gui_app("/path/to/backup".to_string(), None)?;
+    #[hotpath::measure]
     pub fn backup_wallet_gui_app(
         &self,
         destination_path: String,
@@ -105,6 +107,7 @@ impl Wallet {
     }
 
     /// Checks whether wallet is encrypted or not.
+    #[hotpath::measure]
     pub fn is_wallet_encrypted(wallet_path: &Path) -> Result<bool, WalletError> {
         if !wallet_path.exists() {
             return Ok(false); // No wallet = not encrypted
@@ -122,6 +125,7 @@ impl Wallet {
     }
 
     /// Returns a list of recent Incoming Transactions (bydefault last 10)
+    #[hotpath::measure]
     pub fn get_transactions(
         &self,
         count: Option<usize>,
@@ -131,6 +135,7 @@ impl Wallet {
     }
 
     /// Sends specified Amount of Satoshis to an External Address
+    #[hotpath::measure]
     pub fn send_to_address(
         &mut self,
         amount: u64,

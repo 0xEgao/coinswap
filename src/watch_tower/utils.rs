@@ -107,6 +107,7 @@ fn parse_fidelity_op_return(data: &[u8]) -> Option<FidelityAnnouncement> {
 }
 
 /// Process a transaction for fidelity OP_RETURN announcement.
+#[hotpath::measure]
 pub fn process_fidelity(tx: &Transaction) -> Option<FidelityAnnouncement> {
     // Fidelity txs must be timelocked
     if tx.lock_time == LockTime::Blocks(Height::ZERO) {
@@ -130,6 +131,7 @@ pub fn process_fidelity(tx: &Transaction) -> Option<FidelityAnnouncement> {
 }
 
 /// Processes each transaction in a block, updating watch entries and recording fidelity data.
+#[hotpath::measure]
 pub fn process_block<R: Role>(block: Block, registry: &mut FileRegistry) {
     for tx in block.txdata.iter() {
         process_transaction(tx, registry, true);
@@ -146,6 +148,7 @@ pub fn process_block<R: Role>(block: Block, registry: &mut FileRegistry) {
 }
 
 /// Updates the registry for a transaction by clearing spent fidelities and marking watched spends.
+#[hotpath::measure]
 pub fn process_transaction(tx: &Transaction, registry: &mut FileRegistry, in_block: bool) {
     let watch_requests = registry.list_watches();
     for input in &tx.input {
@@ -172,6 +175,7 @@ pub(crate) fn parse_fidelity_event(event: &nostr::Event) -> Option<(Txid, u32)> 
 }
 
 impl SeenTxids {
+    #[hotpath::measure]
     pub fn new() -> Self {
         Self {
             seen: HashSet::new(),
@@ -182,6 +186,7 @@ impl SeenTxids {
     /// Returns true if txid was newly inserted (not seen before).
     /// Returns false if txid was already present.
     /// Uses FIFO eviction when capacity is exceeded.
+    #[hotpath::measure]
     pub fn insert(&mut self, txid: Txid) -> bool {
         if self.seen.insert(txid) {
             self.order.push_back(txid);

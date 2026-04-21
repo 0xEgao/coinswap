@@ -49,6 +49,7 @@ impl Wallet {
     /// - If encryption is used, the backup content is encrypted and serialized.
     /// - If not, a warning is printed, and the backup is stored unencrypted.
     /// - The final backup file will have a `.json` extension.
+    #[hotpath::measure]
     pub fn backup(
         &self,
         path: &Path,
@@ -91,6 +92,7 @@ impl Wallet {
     /// If `wallet_path` does not contain a file name, `wallet_backup.file_name` will be used.
     /// The method initializes the wallet store, connects to the blockchain node via RPC,
     /// syncs wallet data, and saves the state to disk.
+    #[hotpath::measure]
     pub fn restore(
         wallet_backup: &WalletBackup,
         wallet_path: &Path,
@@ -144,6 +146,7 @@ impl Wallet {
     /// - Initializes the wallet with the decrypted data and new encryption.
     /// - Syncs the wallet with the blockchain.
     /// - Saves the restored wallet to disk.
+    #[hotpath::measure]
     pub fn restore_interactive(
         backup_file_path: &PathBuf,
         rpc_config: &RPCConfig,
@@ -179,6 +182,7 @@ impl Wallet {
     /// - Prompts for encryption key if `encrypt == true`.
     /// - Names the backup file as `{wallet_name}-backup.json`.
     /// - Writes the backup to the current working directory.
+    #[hotpath::measure]
     pub fn backup_interactive(wallet: &Self, encrypt: bool) {
         log::info!("Initiating wallet backup!");
         let backup_name = format!("{}-backup", wallet.get_name());

@@ -33,6 +33,7 @@ use crate::{
 
 // ## TODO: Instead of looping over relay's have a connection Pool.
 /// Runs the main discovery routine for maker's fidelity bonds by subscribing to Nostr events (kind 37778).
+#[hotpath::measure]
 pub fn run_discovery(
     bitcoin_rpc: BitcoinRest,
     registry: FileRegistry,

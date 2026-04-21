@@ -78,6 +78,7 @@ fn get_data_dir() -> PathBuf {
 }
 
 /// Get the Maker Directory
+#[hotpath::measure]
 pub fn get_maker_dir() -> PathBuf {
     get_data_dir().join("maker")
 }
@@ -89,11 +90,13 @@ pub(crate) fn get_taker_dir() -> PathBuf {
 
 /// Creates a FeeRate from the global MIN_FEE_RATE constant
 /// This provides type-safe fee calculations throughout the codebase
+#[hotpath::measure]
 pub fn get_min_fee_rate() -> Option<FeeRate> {
     FeeRate::from_sat_per_vb(MIN_FEE_RATE as u64)
 }
 
 /// Calculate fee in satoshis for given virtual bytes using MIN_FEE_RATE
+#[hotpath::measure]
 pub fn calculate_fee_sats(vbytes: u64) -> u64 {
     let fee_rate = get_min_fee_rate().expect("MIN_FEE_RATE should be valid");
     fee_rate
@@ -108,6 +111,7 @@ pub fn calculate_fee_sats(vbytes: u64) -> u64 {
 /// the console and a file. It sets the `RUST_LOG` environment variable to provide default
 /// log levels and configures log4rs with the specified filter level for fine-grained control
 /// of log verbosity.
+#[hotpath::measure]
 pub fn setup_taker_logger(filter: LevelFilter, is_stdout: bool, datadir: Option<PathBuf>) {
     LOGGER.get_or_init(|| {
         let log_dir = datadir.unwrap_or_else(get_taker_dir).join("debug.log");
@@ -149,6 +153,7 @@ pub fn setup_taker_logger(filter: LevelFilter, is_stdout: bool, datadir: Option<
 /// the console and a file. It sets the `RUST_LOG` environment variable to provide default
 /// log levels and configures log4rs with the specified filter level for fine-grained control
 /// of log verbosity.
+#[hotpath::measure]
 pub fn setup_maker_logger(filter: LevelFilter, data_dir: Option<PathBuf>) {
     LOGGER.get_or_init(|| {
         let log_dir = data_dir.unwrap_or_else(get_maker_dir).join("debug.log");
@@ -176,6 +181,7 @@ pub fn setup_maker_logger(filter: LevelFilter, data_dir: Option<PathBuf>) {
 
 /// Setup function that will only run once, even if called multiple times.
 /// Takes log level to set the desired logging verbosity
+#[hotpath::measure]
 pub fn setup_logger(filter: LevelFilter, data_dir: Option<PathBuf>) {
     Once::new().call_once(|| {
         // env::set_var("RUST_LOG", "coinswap=info");
@@ -186,6 +192,7 @@ pub fn setup_logger(filter: LevelFilter, data_dir: Option<PathBuf>) {
 
 /// Send a length-appended Protocol or RPC Message through a stream.
 /// The first byte sent is the length of the actual message.
+#[hotpath::measure]
 pub fn send_message(
     socket_writer: &mut TcpStream,
     message: &impl serde::Serialize,
@@ -203,6 +210,7 @@ pub fn send_message(
 
 /// Reads a response byte_array from a given stream.
 /// Response can be any length-appended data, where the first byte is the length of the actual message.
+#[hotpath::measure]
 pub fn read_message(reader: &mut TcpStream) -> Result<Vec<u8>, NetError> {
     let mut reader = BufReader::new(reader);
     // length of incoming data
@@ -374,6 +382,7 @@ pub struct UTXO {
 
 impl UTXO {
     /// Creates an UTXO from detailed internal utxo data
+    #[hotpath::measure]
     pub fn from_utxo_data(data: (ListUnspentResultEntry, UTXOSpendInfo)) -> Self {
         let addr = data
             .0
@@ -435,6 +444,7 @@ pub(crate) fn compute_checksum(descriptor: &str) -> Result<String, WalletError> 
 }
 
 /// Parse the proxy (Socket:Port) argument from the cli input.
+#[hotpath::measure]
 pub fn parse_proxy_auth(s: &str) -> Result<(String, String), NetError> {
     let parts: Vec<_> = s.split(':').collect();
     if parts.len() != 2 {
@@ -538,6 +548,7 @@ impl Drop for RawModeGuard {
 /// Prompts the user for a password using the given prompt string.
 /// Temporarily disables canonical mode and echo to mask each typed
 /// character with `*` as feedback.
+#[hotpath::measure]
 pub fn prompt_password(message: String) -> io::Result<String> {
     if cfg!(feature = "integration-test") || cfg!(test) {
         return Ok("integration-test".to_string());
@@ -694,6 +705,7 @@ pub(crate) fn get_tor_hostname(
 }
 
 /// Deserialize any generic type from a CBOR file. The type should impl [serde::de::Deserialize].
+#[hotpath::measure]
 pub fn deserialize_from_cbor<T>(mut reader: Vec<u8>) -> Result<T, serde_cbor::Error>
 where
     T: serde::de::DeserializeOwned,
@@ -720,6 +732,7 @@ where
 }
 
 /// Interactive Selection by User for Utxos
+#[hotpath::measure]
 pub fn interactive_select(
     mut choices: Vec<(ListUnspentResultEntry, UTXOSpendInfo)>,
     required_amount: Amount,
