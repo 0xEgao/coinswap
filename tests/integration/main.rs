@@ -33,6 +33,8 @@ mod wallet_backup;
 mod concurrent_takers;
 mod fidelity_timelock_violation;
 mod funding_dynamic_splits;
+mod hotpath_maker_swap;
+mod hotpath_taker_swap;
 mod liquidity_test;
 mod offerbook_sync_race;
 mod taker_cli;
