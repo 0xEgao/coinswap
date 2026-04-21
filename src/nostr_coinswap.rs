@@ -40,6 +40,7 @@ pub fn coinswap_kind(network: Network) -> u16 {
 const EXPIRATION_SECS: u64 = 86400;
 
 /// Broadcasts a fidelity bond announcement over Nostr.
+#[hotpath::measure]
 pub fn broadcast_bond_on_nostr(
     fidelity: FidelityProof,
     network: Network,
@@ -138,6 +139,7 @@ pub fn broadcast_bond_on_nostr(
 }
 
 /// Sends a Nostr event to a single relay and waits for confirmation.
+#[hotpath::measure]
 fn broadcast_to_relay(relay: &str, msg: &ClientMessage) -> Result<(), MakerError> {
     let (mut socket, _) = tungstenite::connect(relay).map_err(|e| {
         log::warn!("failed to connect to nostr relay {}: {}", relay, e);
