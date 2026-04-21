@@ -1689,6 +1689,14 @@ impl Wallet {
             })
             .collect();
 
+        if tx.input.len() != inputs_info.len() {
+            return Err(WalletError::General(format!(
+                "Mismatched signer/input counts: tx has {} inputs but signer metadata has {} entries",
+                tx.input.len(),
+                inputs_info.len()
+            )));
+        }
+
         for (ix, (input, input_info)) in tx.input.iter_mut().zip(inputs_info).enumerate() {
             match input_info {
                 UTXOSpendInfo::OutgoingSwapCoin { .. } => {
