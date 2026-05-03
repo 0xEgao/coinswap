@@ -1030,8 +1030,40 @@ impl MakerTrait for MakerServer {
         Ok(())
     }
 
-    fn store_connection_state(&self, swap_id: &str, state: &ConnectionState) {
+    fn store_connection_state(
+        &self,
+        swap_id: &str,
+        state: &ConnectionState,
+    ) -> Result<(), MakerError> {
         let mut swaps = self.ongoing_swaps.lock().unwrap();
+        if !swaps.contains_key(swap_id) {
+            let wallet = self
+                .wallet
+                .read()
+                .map_err(|_| MakerError::General("Failed to lock wallet"))?;
+            let balances = wallet.get_balances().map_err(MakerError::Wallet)?;
+            let swap_liquidity = balances.regular + balances.swap;
+            let reserved_liquidity = swaps
+                .values()
+                .filter(|state| state.phase != SwapPhase::Completed)
+                .fold(Amount::ZERO, |total, state| total + state.swap_amount);
+            let required_liquidity = reserved_liquidity + state.swap_amount;
+
+            if swap_liquidity < required_liquidity {
+                log::warn!(
+                    "[{}] Rejecting swap {}: available liquidity {}, active reservations {}, requested {}",
+                    self.config.network_port,
+                    swap_id,
+                    swap_liquidity,
+                    reserved_liquidity,
+                    state.swap_amount,
+                );
+                return Err(MakerError::General(
+                    "Not enough liquidity for this swap amount",
+                ));
+            }
+        }
+
         let swap_state = swaps.entry(swap_id.to_string()).or_default();
         swap_state.swap_amount = state.swap_amount;
         swap_state.timelock = state.timelock;
@@ -1053,6 +1085,8 @@ impl MakerTrait for MakerServer {
             state.protocol,
             state.outgoing_swapcoins.len()
         );
+
+        Ok(())
     }
 
     fn get_connection_state(&self, swap_id: &str) -> Option<ConnectionState> {
