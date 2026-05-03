@@ -76,7 +76,7 @@ pub(crate) fn connect_nostr_websocket(
         Socks5Stream::connect_with_password(
             socks_addr.as_str(),
             target_addr.as_str(),
-            "",
+            host,
             tor_auth_password,
         )
     }
