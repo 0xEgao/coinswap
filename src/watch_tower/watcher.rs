@@ -161,9 +161,6 @@ impl<R: Role> Watcher<R> {
                             log::error!("Discovery thread failed: {:?}", e);
                         }
                     });
-                } else {
-                    log::warn!("Nostr discovery skipped: Tor config not provided");
-                    initial_sync_complete.store(true, Ordering::SeqCst);
                 }
             } else {
                 // No discovery — mark initial sync as trivially complete.

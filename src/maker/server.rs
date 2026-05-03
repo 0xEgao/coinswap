@@ -229,23 +229,12 @@ fn spawn_nostr_broadcast_thread(
 
     let maker_clone = Arc::clone(maker);
     let relays = maker.nostr_relays.clone();
-    let nostr_network = maker
-        .wallet
-        .read()
-        .map(|w| w.store.network)
-        .unwrap_or_else(|_| maker.config.network);
-
     let handle = thread::Builder::new()
         .name("nostr-thread".to_string())
         .spawn(move || {
             // Initial broadcast
-            if let Err(e) = broadcast_bond_on_nostr(
-                fidelity.clone(),
-                nostr_network,
-                &relays,
-                maker_clone.config.socks_port,
-                &maker_clone.config.tor_auth_password,
-            ) {
+            if let Err(e) = broadcast_bond_on_nostr(fidelity.clone(), &relays, &maker_clone.config)
+            {
                 log::warn!("Initial nostr broadcast failed: {:?}", e);
             }
 
@@ -265,13 +254,9 @@ fn spawn_nostr_broadcast_thread(
 
                 log::debug!("Re-pinging nostr relays with bond announcement");
 
-                if let Err(e) = broadcast_bond_on_nostr(
-                    fidelity.clone(),
-                    nostr_network,
-                    &relays,
-                    maker_clone.config.socks_port,
-                    &maker_clone.config.tor_auth_password,
-                ) {
+                if let Err(e) =
+                    broadcast_bond_on_nostr(fidelity.clone(), &relays, &maker_clone.config)
+                {
                     log::warn!("Nostr re-ping failed: {:?}", e);
                 }
             }

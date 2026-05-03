@@ -22,7 +22,10 @@ use nostr::{
 use socks::Socks5Stream;
 use tungstenite::{http::Uri, stream::MaybeTlsStream, Message, WebSocket};
 
-use crate::{maker::MakerError, protocol::common_messages::FidelityProof};
+use crate::{
+    maker::{MakerError, MakerServerConfig},
+    protocol::common_messages::FidelityProof,
+};
 
 /// nostr url for coinswap
 #[cfg(not(feature = "integration-test"))]
@@ -94,14 +97,12 @@ pub(crate) fn connect_nostr_websocket(
 /// Broadcasts a fidelity bond announcement over Nostr.
 pub fn broadcast_bond_on_nostr(
     fidelity: FidelityProof,
-    network: Network,
     relays: &[String],
-    socks_port: u16,
-    tor_auth_password: &str,
+    config: &MakerServerConfig,
 ) -> Result<(), MakerError> {
     let outpoint = fidelity.bond.outpoint;
     let content = format!("{}:{}", outpoint.txid, outpoint.vout);
-    let kind = coinswap_kind(network);
+    let kind = coinswap_kind(config.network);
     // Coinswap kinds are in the NIP-33 parameterized-replaceable range (30000..39999),
     // so included a stable `d` tag to keep relay handling spec-compliant.
     let d_tag = format!("fidelity:{}", content);
@@ -163,7 +164,7 @@ pub fn broadcast_bond_on_nostr(
 
     for relay in relays {
         for attempt in 1..=MAX_RETRIES {
-            match broadcast_to_relay(relay, &msg, socks_port, tor_auth_password) {
+            match broadcast_to_relay(relay, &msg, config.socks_port, &config.tor_auth_password) {
                 Ok(()) => {
                     success = true;
                     break;
