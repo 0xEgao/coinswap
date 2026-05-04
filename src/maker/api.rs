@@ -1035,14 +1035,24 @@ impl MakerTrait for MakerServer {
         swap_id: &str,
         state: &ConnectionState,
     ) -> Result<(), MakerError> {
-        let mut swaps = self.ongoing_swaps.lock().unwrap();
-        if !swaps.contains_key(swap_id) {
+        let should_check_liquidity = {
+            let swaps = self.ongoing_swaps.lock()?;
+            !swaps.contains_key(swap_id)
+        };
+
+        let swap_liquidity = if should_check_liquidity {
             let wallet = self
                 .wallet
                 .read()
                 .map_err(|_| MakerError::General("Failed to lock wallet"))?;
             let balances = wallet.get_balances().map_err(MakerError::Wallet)?;
-            let swap_liquidity = balances.regular + balances.swap;
+            Some(balances.regular + balances.swap)
+        } else {
+            None
+        };
+
+        let mut swaps = self.ongoing_swaps.lock()?;
+        if let Some(swap_liquidity) = swap_liquidity.filter(|_| !swaps.contains_key(swap_id)) {
             let reserved_liquidity = swaps
                 .values()
                 .filter(|state| state.phase != SwapPhase::Completed)
@@ -1058,9 +1068,11 @@ impl MakerTrait for MakerServer {
                     reserved_liquidity,
                     state.swap_amount,
                 );
-                return Err(MakerError::General(
-                    "Not enough liquidity for this swap amount",
-                ));
+                return Err(MakerError::InsufficientLiquidity {
+                    available: swap_liquidity,
+                    reserved: reserved_liquidity,
+                    requested: state.swap_amount,
+                });
             }
         }
 
