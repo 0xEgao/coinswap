@@ -1705,7 +1705,7 @@ impl Taker {
         let timeout = if cfg!(feature = "integration-test") {
             Duration::from_secs(120)
         } else {
-            Duration::from_secs(600)
+            Duration::from_secs(900)
         };
 
         loop {
