@@ -43,6 +43,15 @@ jobs:
       - name: Checkout base
         run: git checkout ${{ github.event.pull_request.base.sha }}
 
+      - name: Inject benchmark harness into base checkout
+        run: |
+          git checkout ${{ github.event.pull_request.head.sha }} -- \
+            tests/integration/hotpath_profile.rs \
+            tests/integration/main.rs
+          if ! grep -q "write_filtered_report_by_prefixes" src/hotpath_local.rs; then
+            git checkout ${{ github.event.pull_request.head.sha }} -- src/hotpath_local.rs
+          fi
+
       - name: Base benchmark
         env:
           BITCOIND_DOWNLOAD_ENDPOINT: https://bitcoincore.org/bin/bitcoin-core-28.1
