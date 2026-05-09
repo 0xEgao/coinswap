@@ -268,3 +268,39 @@ fn print_hotpath_tables_from_path(report_path: &Path) {
     print_section(&v, "functions_timing");
     print_section(&v, "functions_alloc");
 }
+
+/// Reads a Hotpath JSON report, filters function rows by name prefixes, and writes a new report.
+pub fn write_filtered_report_by_prefixes(
+    input_report_path: &Path,
+    output_report_path: &Path,
+    prefixes: &[&str],
+) -> std::io::Result<()> {
+    let mut report = read_json_with_retries(input_report_path)?;
+    for section_key in ["functions_timing", "functions_alloc"] {
+        let Some(rows) = report
+            .get_mut(section_key)
+            .and_then(|section| section.get_mut("data"))
+            .and_then(Value::as_array_mut)
+        else {
+            continue;
+        };
+
+        rows.retain(|row| {
+            row.get("name")
+                .and_then(Value::as_str)
+                .is_some_and(|name| prefixes.iter().any(|p| name.starts_with(p)))
+        });
+    }
+
+    if let Some(parent) = output_report_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let file = fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(output_report_path)?;
+    serde_json::to_writer_pretty(std::io::BufWriter::new(file), &report)
+        .map_err(std::io::Error::other)
+}

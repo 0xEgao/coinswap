@@ -4,71 +4,13 @@ use crate::test_framework;
 
 use bitcoin::Amount;
 use coinswap::{
+    hotpath_local::write_filtered_report_by_prefixes,
     maker::{start_server, MakerBehavior},
     protocol::common_messages::ProtocolVersion,
     taker::{SwapParams, TakerBehavior},
     wallet::AddressType,
 };
-use serde_json::Value;
-use std::{env, path::PathBuf, sync::atomic::Ordering::Relaxed, thread, time::Duration};
-
-const IO_RETRIES: usize = 50;
-const IO_RETRY_SLEEP: Duration = Duration::from_millis(25);
-
-fn read_json_with_retries(path: &std::path::Path) -> std::io::Result<Value> {
-    let mut last_err = std::io::Error::new(
-        std::io::ErrorKind::NotFound,
-        format!("report not readable at {}", path.display()),
-    );
-    for _ in 0..IO_RETRIES {
-        match std::fs::read_to_string(path)
-            .and_then(|s| serde_json::from_str::<Value>(&s).map_err(std::io::Error::other))
-        {
-            Ok(v) => return Ok(v),
-            Err(e) => {
-                last_err = e;
-                thread::sleep(IO_RETRY_SLEEP);
-            }
-        }
-    }
-    Err(last_err)
-}
-
-fn write_filtered_report_by_prefixes(
-    input_report_path: &std::path::Path,
-    output_report_path: &std::path::Path,
-    prefixes: &[&str],
-) -> std::io::Result<()> {
-    let mut report = read_json_with_retries(input_report_path)?;
-
-    for section_key in ["functions_timing", "functions_alloc"] {
-        let Some(rows) = report
-            .get_mut(section_key)
-            .and_then(|section| section.get_mut("data"))
-            .and_then(Value::as_array_mut)
-        else {
-            continue;
-        };
-
-        rows.retain(|row| {
-            row.get("name")
-                .and_then(Value::as_str)
-                .is_some_and(|name| prefixes.iter().any(|p| name.starts_with(p)))
-        });
-    }
-
-    if let Some(parent) = output_report_path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-
-    let file = std::fs::OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open(output_report_path)?;
-    let writer = std::io::BufWriter::new(file);
-    serde_json::to_writer_pretty(writer, &report).map_err(std::io::Error::other)
-}
+use std::{env, path::PathBuf, sync::atomic::Ordering::Relaxed, thread};
 
 #[test]
 fn hotpath_profile_swap() {
