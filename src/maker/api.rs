@@ -806,6 +806,7 @@ impl MakerTrait for MakerServer {
         }
     }
 
+    // this is a good function
     #[hotpath::measure]
     fn validate_swap_parameters(&self, details: &SwapDetails) -> Result<(), MakerError> {
         use super::handlers::MIN_CONTRACT_REACTION_TIME;
