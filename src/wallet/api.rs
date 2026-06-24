@@ -1605,6 +1605,7 @@ impl Wallet {
             log::debug!("[UTXO Cache] Removed UTXO: {outpoint:?}");
         }
 
+        // gg
         // Process and add only new UTXOs
         for utxo in utxos {
             let outpoint = OutPoint {
