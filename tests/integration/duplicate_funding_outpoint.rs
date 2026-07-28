@@ -1,5 +1,5 @@
-//! A malicious taker can repeat one or more valid on-chain output and its matching
-//! metadata. Without an explicit uniqueness check, each entry passes individual
+//! A malicious taker can repeat one or more valid on-chain output.
+//! Without an explicit uniqueness check, each entry passes individual
 //! verification and the maker counts the same value twice when funding the next
 //! hop. The rejection must therefore happen before the maker creates or
 //! broadcasts any outgoing funding transaction.

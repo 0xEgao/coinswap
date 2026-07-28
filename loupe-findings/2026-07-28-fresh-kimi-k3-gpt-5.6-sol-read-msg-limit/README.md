@@ -1,0 +1,54 @@
+# Loupe findings for repo 1
+
+- [#1: Unvalidated fee rates from untrusted HTTP APIs flow into transaction construction](1-unvalidated-fee-rates-from-untrusted-http-apis-flow-into-transaction-construction.md) - `Medium` / `pending`
+- [#2: Maker accepts expired absolute Taproot timelock in SwapDetails, enabling fund theft](2-maker-accepts-expired-absolute-taproot-timelock-in-swapdetails-enabling-fund-theft.md) - `High` / `pending`
+- [#3: Duplicate taker-chosen swap id overwrites live swap state in handle_swap_details](3-duplicate-taker-chosen-swap-id-overwrites-live-swap-state-in-handle-swap-details.md) - `Medium` / `pending`
+- [#4: Unauthenticated remote memory leak via String::leak in expect_phase/check_swap_id error paths](4-unauthenticated-remote-memory-leak-via-string-leak-in-expect-phase-check-swap-id-error-paths.md) - `Low` / `pending`
+- [#5: ThreadPool::join_all_threads deadlocks with concurrent add_thread during shutdown](5-threadpool-join-all-threads-deadlocks-with-concurrent-add-thread-during-shutdown.md) - `Low` / `pending`
+- [#6: Maker signs taker-supplied receiver contract tx without validating its output, enabling theft of the maker's broadcast funding output](6-maker-signs-taker-supplied-receiver-contract-tx-without-validating-its-output-enabling-theft-of-the-maker-s-broadcast-funding-output.md) - `High` / `pending`
+- [#7: Unchecked u16 overflow in taker-controlled locktime addition](7-unchecked-u16-overflow-in-taker-controlled-locktime-addition.md) - `Medium` / `pending`
+- [#8: Stalled unauthenticated RPC client blocks maker RPC server indefinitely](8-stalled-unauthenticated-rpc-client-blocks-maker-rpc-server-indefinitely.md) - `Medium` / `pending`
+- [#9: One stalled connection blocks the maker RPC server forever; per-connection read timeout is defeated](9-one-stalled-connection-blocks-the-maker-rpc-server-forever-per-connection-read-timeout-is-defeated.md) - `Medium` / `pending`
+- [#10: Preserve wrapped error sources in NetError](10-preserve-wrapped-error-sources-in-neterror.md) - `Low` / `pending`
+- [#11: Public fee requests can block fee estimation indefinitely](11-public-fee-requests-can-block-fee-estimation-indefinitely.md) - `Medium` / `pending`
+- [#12: Keep report labels inside the hotpath directory](12-keep-report-labels-inside-the-hotpath-directory.md) - `Low` / `pending`
+- [#13: Refuse symlinks at hotpath temporary files](13-refuse-symlinks-at-hotpath-temporary-files.md) - `Medium` / `pending`
+- [#14: Reject spent Taproot contract outputs before funding the next hop](14-reject-spent-taproot-contract-outputs-before-funding-the-next-hop.md) - `High` / `pending`
+- [#15: Stop leaking attacker-controlled swap IDs on rejection](15-stop-leaking-attacker-controlled-swap-ids-on-rejection.md) - `Medium` / `pending`
+- [#16: Restore fee and reservation fields on swap reconnection](16-restore-fee-and-reservation-fields-on-swap-reconnection.md) - `Medium` / `pending`
+- [#17: Expire pre-funding swaps that permanently reserve liquidity](17-expire-pre-funding-swaps-that-permanently-reserve-liquidity.md) - `Medium` / `pending`
+- [#18: Bind Taproot fee duration to the actual contract timelock](18-bind-taproot-fee-duration-to-the-actual-contract-timelock.md) - `Medium` / `pending`
+- [#19: Reject funding keepalives after the confirmation phase](19-reject-funding-keepalives-after-the-confirmation-phase.md) - `Medium` / `pending`
+- [#20: Preserve the accepted fee duration across swap reconnections](20-preserve-the-accepted-fee-duration-across-swap-reconnections.md) - `Medium` / `pending`
+- [#21: Honor the configured confirmation depth for Legacy funding](21-honor-the-configured-confirmation-depth-for-legacy-funding.md) - `Medium` / `pending`
+- [#22: Reap abandoned pre-funding liquidity reservations](22-reap-abandoned-pre-funding-liquidity-reservations.md) - `Medium` / `pending`
+- [#23: Restrict permissions on configs containing the Tor password](23-restrict-permissions-on-configs-containing-the-tor-password.md) - `Low` / `pending`
+- [#24: Reject oversized swap identifiers before storing protocol state](24-reject-oversized-swap-identifiers-before-storing-protocol-state.md) - `Medium` / `pending`
+- [#25: Claim reconnected swaps before idle recovery](25-claim-reconnected-swaps-before-idle-recovery.md) - `Medium` / `pending`
+- [#26: Reserve inputs consumed by pending Legacy funding transactions](26-reserve-inputs-consumed-by-pending-legacy-funding-transactions.md) - `Medium` / `pending`
+- [#27: Abort funding when contract watch registration fails](27-abort-funding-when-contract-watch-registration-fails.md) - `Medium` / `pending`
+- [#28: Keep Taproot funding inputs reserved until broadcast](28-keep-taproot-funding-inputs-reserved-until-broadcast.md) - `Medium` / `pending`
+- [#29: Persist partial Legacy funding broadcasts before returning errors](29-persist-partial-legacy-funding-broadcasts-before-returning-errors.md) - `High` / `pending`
+- [#30: Validate Legacy ECDSA sighash type before funding](30-validate-legacy-ecdsa-sighash-type-before-funding.md) - `High` / `pending`
+- [#31: Avoid Debug-formatting wrapped errors in NetError Display](31-avoid-debug-formatting-wrapped-errors-in-neterror-display.md) - `Low` / `pending`
+- [#32: Classify timed-out I/O as ConnectionTimedOut](32-classify-timed-out-i-o-as-connectiontimedout.md) - `Low` / `pending`
+- [#33: Restrict hotpath reports to the profiling owner](33-restrict-hotpath-reports-to-the-profiling-owner.md) - `Low` / `pending`
+- [#34: Propagate the final buffered report write failure](34-propagate-the-final-buffered-report-write-failure.md) - `Low` / `pending`
+- [#35: Bound remotely driven hotpath thread records](35-bound-remotely-driven-hotpath-thread-records.md) - `Medium` / `pending`
+- [#36: Bind Legacy fee duration to the validated timelock](36-bind-legacy-fee-duration-to-the-validated-timelock.md) - `Medium` / `pending`
+- [#37: Bound Legacy contract signing to the negotiated count](37-bound-legacy-contract-signing-to-the-negotiated-count.md) - `Medium` / `pending`
+- [#38: Stop logging unauthenticated Taproot payloads at info level](38-stop-logging-unauthenticated-taproot-payloads-at-info-level.md) - `Medium` / `pending`
+- [#39: Reject incoming funding outpoints reused across swap IDs](39-reject-incoming-funding-outpoints-reused-across-swap-ids.md) - `High` / `pending`
+- [#40: Set the default fidelity bond to the intended 0.05 BTC](40-set-the-default-fidelity-bond-to-the-intended-0-05-btc.md) - `Low` / `pending`
+- [#41: Reject negative and non-finite maker fee percentages](41-reject-negative-and-non-finite-maker-fee-percentages.md) - `Low` / `pending`
+- [#44: Reject duplicate prevouts before signing Legacy contracts](44-reject-duplicate-prevouts-before-signing-legacy-contracts.md) - `High` / `pending`
+- [#45: Reject non-finite fee rates in maker RPC requests](45-reject-non-finite-fee-rates-in-maker-rpc-requests.md) - `Low` / `pending`
+- [#46: Validate Legacy sender contract value before signing](46-validate-legacy-sender-contract-value-before-signing.md) - `High` / `pending`
+- [#47: Require idempotency keys for fund-moving maker RPCs](47-require-idempotency-keys-for-fund-moving-maker-rpcs.md) - `Medium` / `pending`
+- [#48: Redact private metadata from maker RPC debug output](48-redact-private-metadata-from-maker-rpc-debug-output.md) - `Low` / `pending`
+- [#49: Remove unconditional delay from the maker RPC accept loop](49-remove-unconditional-delay-from-the-maker-rpc-accept-loop.md) - `Medium` / `pending`
+- [#50: Refuse symlinks when creating the RPC cookie](50-refuse-symlinks-when-creating-the-rpc-cookie.md) - `Low` / `pending`
+- [#51: Do not treat missing funding metadata as unbroadcast](51-do-not-treat-missing-funding-metadata-as-unbroadcast.md) - `Medium` / `pending`
+- [#52: Restrict swap tracker files to the maker owner](52-restrict-swap-tracker-files-to-the-maker-owner.md) - `Low` / `pending`
+- [#53: Fail closed when existing recovery state cannot be loaded](53-fail-closed-when-existing-recovery-state-cannot-be-loaded.md) - `Low` / `pending`
+- [#54: Retry completed incoming sweeps after transient failure](54-retry-completed-incoming-sweeps-after-transient-failure.md) - `Medium` / `pending`
