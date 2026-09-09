@@ -6,6 +6,7 @@
 //! It uses asynchronous channels for concurrent processing of maker offers.
 
 use std::{
+    collections::HashMap,
     convert::TryFrom,
     fmt,
     io::BufWriter,
@@ -566,38 +567,73 @@ impl OfferSyncService {
             }
         };
         let fidelities = self.registry.list_fidelity(height)?;
-        let checked_fidelities = fidelities
-            .into_iter()
-            .filter_map(|fidelity| {
-                let outpoint = OutPoint::new(fidelity.txid, 0);
-                match self
-                    .blockchain
-                    .get_tx_out(&outpoint.txid, outpoint.vout, Some(true))
-                {
-                    Ok(Some(_)) => Some((fidelity, true)),
-                    Ok(None) => Some((fidelity, false)),
-                    Err(e) => {
-                        log::warn!(
-                            "Failed to check fidelity output {outpoint}; leaving offerbook unchanged: {e:?}"
-                        );
-                        None
-                    }
+        let mut spent_outpoints = Vec::new();
+        let mut live_candidates: HashMap<MakerAddress, Option<OutPoint>> = HashMap::new();
+        for fidelity in fidelities {
+            let outpoint = OutPoint::new(fidelity.txid, 0);
+            match self
+                .blockchain
+                .get_tx_out(&outpoint.txid, outpoint.vout, Some(true))
+            {
+                Ok(Some(_)) => {
+                    let address = match MakerAddress::try_from(fidelity.onion_address) {
+                        Ok(address) => address,
+                        Err(e) => {
+                            log::warn!("Skipping invalid maker address from registry: {e}");
+                            continue;
+                        }
+                    };
+                    live_candidates
+                        .entry(address)
+                        .and_modify(|current| {
+                            if let Some(existing) = *current {
+                                if existing != outpoint {
+                                    *current = None;
+                                }
+                            }
+                        })
+                        .or_insert(Some(outpoint));
                 }
-            })
-            .collect::<Vec<_>>();
+                Ok(None) => spent_outpoints.push(outpoint),
+                Err(e) => log::warn!(
+                    "Failed to check fidelity output {outpoint}; leaving offerbook unchanged: {e:?}"
+                ),
+            }
+        }
+
         {
             let mut book = lock_debug!(self.offerbook.inner.write())
                 .map_err(|_| TakerError::General("offerbook lock poisoned".into()))?;
-            for (fidelity, is_unspent) in checked_fidelities {
-                let outpoint = OutPoint::new(fidelity.txid, 0);
-                if !is_unspent {
-                    book.remove_fidelity_outpoint(outpoint);
-                    continue;
+            let mut changed = false;
+            for outpoint in spent_outpoints {
+                changed |= book.remove_fidelity_outpoint(outpoint);
+            }
+            for (address, live_outpoint) in live_candidates {
+                let suppress = match live_outpoint {
+                    Some(outpoint) if book.upsert_address(address.clone(), Some(outpoint.txid)) => {
+                        false
+                    }
+                    Some(outpoint) => {
+                        log::warn!(
+                            "Suppressing maker {address}: cached fidelity outpoint conflicts with live {outpoint}"
+                        );
+                        true
+                    }
+                    None => {
+                        log::warn!(
+                            "Suppressing maker {address}: multiple live fidelity bonds claim this address"
+                        );
+                        true
+                    }
+                };
+                if suppress {
+                    let before = book.makers.len();
+                    book.makers.retain(|maker| maker.address != address);
+                    changed |= book.makers.len() != before;
                 }
-                match MakerAddress::try_from(fidelity.onion_address) {
-                    Ok(address) => book.upsert_address(address, Some(fidelity.txid)),
-                    Err(e) => log::warn!("Skipping invalid maker address from registry: {e}"),
-                }
+            }
+            if changed {
+                book.write_to_disk(&self.offerbook.path)?;
             }
         }
 
@@ -701,7 +737,9 @@ impl OfferSyncService {
         // Ensure the maker is present in the offerbook before polling.
         // Same poison policy as fetch_and_record_one: skip this poll.
         match lock_debug!(self.offerbook.inner.write()) {
-            Ok(mut book) => book.upsert_address(address.clone(), None),
+            Ok(mut book) => {
+                book.upsert_address(address.clone(), None);
+            }
             Err(_) => {
                 log::error!("offerbook lock poisoned; skipping poll of {address}");
                 return None;
@@ -995,16 +1033,23 @@ impl OfferBook {
         before.saturating_sub(self.makers.len())
     }
 
-    fn upsert_address(&mut self, address: MakerAddress, txid: Option<Txid>) {
+    fn upsert_address(&mut self, address: MakerAddress, txid: Option<Txid>) -> bool {
         if let Some(maker) = self
             .makers
             .iter_mut()
             .find(|maker| maker.address == address)
         {
             if let Some(txid) = txid {
-                maker.fidelity_outpoint = Some(OutPoint::new(txid, 0));
+                let outpoint = OutPoint::new(txid, 0);
+                if maker
+                    .fidelity_outpoint
+                    .is_some_and(|existing| existing != outpoint)
+                {
+                    return false;
+                }
+                maker.fidelity_outpoint = Some(outpoint);
             }
-            return;
+            return true;
         }
 
         self.makers.push(MakerOfferCandidate {
@@ -1016,11 +1061,14 @@ impl OfferBook {
             last_offer_update_ts: None,
             next_offer_check_ts: None,
         });
+        true
     }
 
-    fn remove_fidelity_outpoint(&mut self, outpoint: OutPoint) {
+    fn remove_fidelity_outpoint(&mut self, outpoint: OutPoint) -> bool {
+        let before = self.makers.len();
         self.makers
             .retain(|maker| maker.fidelity_outpoint != Some(outpoint));
+        self.makers.len() != before
     }
 
     pub(crate) fn mark_success(
@@ -1456,22 +1504,54 @@ mod tests {
     }
 
     #[test]
-    fn spent_fidelity_candidate_can_be_restored_after_reorg() {
+    fn spent_fidelity_removal_persists_and_can_be_restored_after_reorg() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("offerbook.json");
         let address = addr("6107");
         let txid = Txid::from_slice(&[3; 32]).unwrap();
         let outpoint = OutPoint::new(txid, 0);
         let mut book = OfferBook::default();
 
         book.upsert_address(address.clone(), Some(txid));
-        assert_eq!(book.makers.len(), 1);
+        book.write_to_disk(&path).unwrap();
 
-        book.remove_fidelity_outpoint(outpoint);
+        assert!(book.remove_fidelity_outpoint(outpoint));
         assert!(book.makers.is_empty());
+        book.write_to_disk(&path).unwrap();
 
-        book.upsert_address(address.clone(), Some(txid));
+        let mut reloaded = OfferBook::read_from_disk(&path).unwrap();
+        assert!(reloaded.makers.is_empty());
+
+        reloaded.upsert_address(address.clone(), Some(txid));
+        assert_eq!(reloaded.makers.len(), 1);
+        assert_eq!(reloaded.makers[0].address, address);
+        assert_eq!(reloaded.makers[0].fidelity_outpoint, Some(outpoint));
+    }
+
+    #[test]
+    fn fidelity_candidate_transitions_enforce_one_live_bond() {
+        let address = addr("6108");
+        let old = Txid::from_slice(&[4; 32]).unwrap();
+        let new = Txid::from_slice(&[5; 32]).unwrap();
+        let mut book = OfferBook::default();
+
+        assert!(book.upsert_address(address.clone(), Some(old)));
+        assert!(book.upsert_address(address.clone(), Some(old)));
         assert_eq!(book.makers.len(), 1);
-        assert_eq!(book.makers[0].address, address);
-        assert_eq!(book.makers[0].fidelity_outpoint, Some(outpoint));
+
+        assert!(book.remove_fidelity_outpoint(OutPoint::new(old, 0)));
+        assert!(book.upsert_address(address.clone(), Some(new)));
+        assert_eq!(
+            book.makers[0].fidelity_outpoint,
+            Some(OutPoint::new(new, 0))
+        );
+
+        assert!(!book.upsert_address(address, Some(old)));
+        assert_eq!(book.makers.len(), 1);
+        assert_eq!(
+            book.makers[0].fidelity_outpoint,
+            Some(OutPoint::new(new, 0))
+        );
     }
 
     #[test]
